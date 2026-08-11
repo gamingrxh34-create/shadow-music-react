@@ -31,6 +31,8 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error('Sign in error:', error)
     }
+  }
+
   const continueAsGuest = () => {
     setUser({
       uid: 'guest_user_1',
