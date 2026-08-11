@@ -4,7 +4,7 @@ import BottomSheet from '../components/BottomSheet'
 import { IoCheckmark } from 'react-icons/io5'
 
 function Login() {
-  const { signInWithGoogle } = useAuth()
+  const { signInWithGoogle, continueAsGuest } = useAuth()
   const [isChecked, setIsChecked] = useState(false)
   const [showModal, setShowModal] = useState(false)
 
@@ -74,6 +74,22 @@ function Login() {
             <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
           </svg>
           Continue with Google
+        </button>
+
+        {/* Continue as Guest */}
+        <button
+          onClick={continueAsGuest}
+          disabled={!isChecked}
+          className={`w-full flex items-center justify-center gap-3 font-semibold py-4 px-6 rounded-full transition-all duration-300 border ${
+            isChecked 
+              ? 'bg-transparent border-brand-300 text-brand-300 hover:bg-brand-300/10 active:scale-[0.98]' 
+              : 'border-white/10 text-white/40 cursor-not-allowed'
+          }`}
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+          </svg>
+          Continue as Guest
         </button>
       </div>
 

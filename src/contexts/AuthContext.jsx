@@ -31,6 +31,14 @@ export function AuthProvider({ children }) {
     } catch (error) {
       console.error('Sign in error:', error)
     }
+  const continueAsGuest = () => {
+    setUser({
+      uid: 'guest_user_1',
+      displayName: 'Guest User',
+      email: 'guest@shadowmusic.app',
+      photoURL: 'https://ui-avatars.com/api/?name=Guest+User&background=38d1b0&color=fff'
+    })
+    setLoading(false)
   }
 
   const logout = async () => {
@@ -41,7 +49,7 @@ export function AuthProvider({ children }) {
     }
   }
 
-  const value = { user, loading, signInWithGoogle, logout }
+  const value = { user, loading, signInWithGoogle, continueAsGuest, logout }
 
   return (
     <AuthContext.Provider value={value}>
