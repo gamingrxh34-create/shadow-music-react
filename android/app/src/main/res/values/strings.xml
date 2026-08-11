@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">Shadow Music</string>
+    <string name="title_activity_main">Shadow Music</string>
+    <string name="package_name">com.shadowmusic.app</string>
+    <string name="custom_url_scheme">com.shadowmusic.app</string>
+</resources>
