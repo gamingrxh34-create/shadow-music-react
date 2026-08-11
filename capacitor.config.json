@@ -1,5 +1,11 @@
 {
   "appId": "com.shadowmusic.app",
   "appName": "Shadow Music",
-  "webDir": "dist"
+  "webDir": "dist",
+  "server": {
+    "allowNavigation": [
+      "shadow-music-f2b43.firebaseapp.com",
+      "*.firebaseapp.com"
+    ]
+  }
 }
