@@ -6,16 +6,17 @@ import TrackRow from '../components/TrackRow'
 import { IoSearch, IoClose } from 'react-icons/io5'
 
 const categories = [
-  { name: 'Chill', emoji: '🌊', color: 'from-cyan-500/20 to-blue-600/20' },
-  { name: 'Workout', emoji: '🔥', color: 'from-orange-500/20 to-red-600/20' },
-  { name: 'Party', emoji: '🎉', color: 'from-purple-500/20 to-pink-600/20' },
-  { name: 'Late Night', emoji: '🌙', color: 'from-indigo-500/20 to-violet-600/20' },
-  { name: 'Sad', emoji: '💔', color: 'from-slate-500/20 to-gray-600/20' },
-  { name: 'Hype', emoji: '⚡', color: 'from-yellow-500/20 to-amber-600/20' },
+  { name: 'Chill', emoji: '🌊', color: 'from-cyan-500/20 to-blue-600/20', keywords: ['chill', 'lo-fi', 'lofi', 'relax', 'calm', 'sleep', 'slow'] },
+  { name: 'Workout', emoji: '🔥', color: 'from-orange-500/20 to-red-600/20', keywords: ['workout', 'gym', 'energy', 'power', 'beast', 'pump'] },
+  { name: 'Party', emoji: '🎉', color: 'from-purple-500/20 to-pink-600/20', keywords: ['party', 'dance', 'club', 'disco', 'bhangra', 'dj', 'remix'] },
+  { name: 'Late Night', emoji: '🌙', color: 'from-indigo-500/20 to-violet-600/20', keywords: ['night', 'midnight', 'dark', 'deep', 'sad', 'alone', 'heartbreak'] },
+  { name: 'Sad', emoji: '💔', color: 'from-slate-500/20 to-gray-600/20', keywords: ['sad', 'heartbreak', 'emotional', 'cry', 'dard', 'dil', 'toot', 'judai'] },
+  { name: 'Hype', emoji: '⚡', color: 'from-yellow-500/20 to-amber-600/20', keywords: ['hype', 'rap', 'hip hop', 'trap', 'swag', 'fire', 'lit', 'boss'] },
 ]
 
 function Search() {
   const [query, setQuery] = useState('')
+  const [activeMood, setActiveMood] = useState(null)
   const { recentSearches, addRecentSearch, removeRecentSearch, clearRecentSearches } = useUserData()
   const { songs } = useMusicData()
 
@@ -25,6 +26,13 @@ function Search() {
         s.artist.toLowerCase().includes(query.toLowerCase()) ||
         s.album.toLowerCase().includes(query.toLowerCase())
       )
+    : []
+
+  const moodFiltered = activeMood
+    ? songs.filter(s => {
+        const searchText = `${s.title} ${s.artist} ${s.album} ${s.genre || ''}`.toLowerCase()
+        return activeMood.keywords.some(kw => searchText.includes(kw))
+      })
     : []
 
   const handleSearch = (term) => {
@@ -103,14 +111,33 @@ function Search() {
                 <motion.button
                   key={cat.name}
                   whileTap={{ scale: 0.95 }}
-                  onClick={() => handleSearch(cat.name)}
-                  className={`glass rounded-xl p-4 text-left bg-gradient-to-br ${cat.color} border border-white/5 hover:border-white/10 transition-colors`}
+                  onClick={() => setActiveMood(activeMood?.name === cat.name ? null : cat)}
+                  className={`glass rounded-xl p-4 text-left bg-gradient-to-br ${cat.color} border transition-colors ${
+                    activeMood?.name === cat.name ? 'border-brand-300/60' : 'border-white/5 hover:border-white/10'
+                  }`}
                 >
                   <div className="text-2xl mb-2">{cat.emoji}</div>
                   <div className="text-sm font-bold text-white">{cat.name}</div>
+                  {activeMood?.name === cat.name && (
+                    <div className="text-[10px] text-brand-300 mt-1">{moodFiltered.length} songs</div>
+                  )}
                 </motion.button>
               ))}
             </div>
+            {activeMood && (
+              <div className="mt-5">
+                <h4 className="text-sm font-semibold text-white/50 mb-3">{activeMood.emoji} {activeMood.name} — {moodFiltered.length} songs</h4>
+                {moodFiltered.length > 0 ? (
+                  <div className="flex flex-col">
+                    {moodFiltered.map((track, i) => (
+                      <TrackRow key={track.id} track={track} index={i} allTracks={moodFiltered} />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-white/30 text-sm">No songs found for this mood yet</div>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}

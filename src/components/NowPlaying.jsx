@@ -25,6 +25,7 @@ function NowPlaying({ onClose }) {
   const [artistData, setArtistData] = useState(null)
   const [dominantColor, setDominantColor] = useState('#020c1b')
   const [showRemaining, setShowRemaining] = useState(false)
+  const [showAllLyrics, setShowAllLyrics] = useState(false)
 
   useEffect(() => {
     if (currentTrack?.coverUrl) {
@@ -92,16 +93,13 @@ function NowPlaying({ onClose }) {
         }}
         className="fixed inset-0 z-[100] flex flex-col bg-[#050505]"
       >
-        {/* Blurred Background - dynamic color */}
-        <div className="absolute inset-0 z-0 transition-colors duration-1000" style={{ backgroundColor: dominantColor }}>
-          <img 
-            src={currentTrack.coverUrl} 
-            alt="" 
-            className="w-full h-full object-cover scale-150 blur-[100px] opacity-40 mix-blend-overlay"
-          />
-          <div className="absolute inset-0 bg-black/40" />
-          <div className="absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/80" />
-        </div>
+        {/* Background - static gradient based on dominant color, NO heavy blur */}
+        <div 
+          className="absolute inset-0 z-0 transition-colors duration-1000" 
+          style={{ 
+            background: `linear-gradient(160deg, ${dominantColor}99 0%, #050505 50%, #050505 100%)`
+          }}
+        />
 
         {/* Scrollable Content */}
         <div className="relative z-10 flex flex-col h-full overflow-y-auto custom-scrollbar">
@@ -130,12 +128,9 @@ function NowPlaying({ onClose }) {
                   transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
                 />
               )}
-              <motion.img
-                layoutId="album-art"
+              <img
                 src={currentTrack.coverUrl}
                 alt={currentTrack.title}
-                animate={{ scale: isPlaying ? [1, 1.02, 1] : 1 }}
-                transition={{ duration: 4, repeat: isPlaying ? Infinity : 0, ease: 'easeInOut' }}
                 className="w-[88%] aspect-square rounded-[20px] object-cover shadow-2xl shadow-black/80 relative z-10"
               />
             </div>
@@ -214,9 +209,19 @@ function NowPlaying({ onClose }) {
             {/* Lyrics */}
             {lyricsLines.length > 0 && (
               <div className="flex-shrink-0 mb-8">
-                <h3 className="text-sm font-bold text-brand-300 mb-3">LYRICS</h3>
-                <div className="glass rounded-2xl px-5 py-5 max-h-[250px] overflow-y-auto custom-scrollbar">
-                  {lyricsLines.map((line, i) => (
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-sm font-bold text-brand-300">LYRICS</h3>
+                  {lyricsLines.length > 6 && (
+                    <button
+                      onClick={() => setShowAllLyrics(prev => !prev)}
+                      className="text-xs text-white/50 hover:text-brand-300 transition-colors"
+                    >
+                      {showAllLyrics ? 'Show Less' : 'Show More'}
+                    </button>
+                  )}
+                </div>
+                <div className="glass rounded-2xl px-5 py-5 overflow-hidden">
+                  {(showAllLyrics ? lyricsLines : lyricsLines.slice(0, 6)).map((line, i) => (
                     <p key={i} className={`text-sm mb-1.5 leading-relaxed ${
                       line === '\u266a' ? 'text-white/15 text-xs my-3' : 'text-white/70'
                     }`}>

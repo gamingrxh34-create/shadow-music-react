@@ -35,7 +35,7 @@ export default function ArtistView() {
 
   return (
     <motion.div 
-      className="page-enter pb-8 min-h-full"
+      className="page-enter pb-32 min-h-full"
       drag="x"
       dragConstraints={{ left: 0, right: 0 }}
       dragElastic={0.2}

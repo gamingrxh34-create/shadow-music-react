@@ -265,13 +265,26 @@ export function UserDataProvider({ children }) {
     })
   }, [])
 
+  const removeFromHistory = useCallback((trackId) => {
+    setRecentHistory(prev => {
+      const updated = prev.filter(t => t.id !== trackId)
+      localStorage.setItem('recentHistory', JSON.stringify(updated))
+      return updated
+    })
+  }, [])
+
+  const clearHistory = useCallback(() => {
+    setRecentHistory([])
+    localStorage.removeItem('recentHistory')
+  }, [])
+
   const value = {
     likedSongIds, followedArtists, playlists, recentSearches, recentHistory, dataLoaded, hasOnboarded,
     toggleLikeSong, isSongLiked,
     toggleFollowArtist, isArtistFollowed, completeOnboarding,
     createPlaylist, deletePlaylist, addSongToPlaylist, removeSongFromPlaylist, reorderPlaylist, updatePlaylistCover,
     addRecentSearch, removeRecentSearch, clearRecentSearches,
-    addToHistory
+    addToHistory, removeFromHistory, clearHistory
   }
 
   return (

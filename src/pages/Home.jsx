@@ -5,14 +5,14 @@ import { usePlayer } from '../contexts/PlayerContext'
 import { useUserData } from '../contexts/UserDataContext'
 import { useMusicData } from '../contexts/MusicDataContext'
 import MediaCard from '../components/MediaCard'
-import { IoSettingsOutline } from 'react-icons/io5'
+import { IoSettingsOutline, IoClose } from 'react-icons/io5'
 import SettingsModal from '../components/SettingsModal'
 import Skeleton from '../components/Skeleton'
 
 function Home() {
   const { user } = useAuth()
   const { play } = usePlayer()
-  const { recentHistory } = useUserData()
+  const { recentHistory, removeFromHistory } = useUserData()
   const { songs: allSongs, artists: allArtists } = useMusicData()
   const navigate = useNavigate()
   const [showSettings, setShowSettings] = useState(false)
@@ -28,7 +28,7 @@ function Home() {
   
   const recentSongs = (recentHistory || []).slice(0, 6)
 
-  const madeForYou = allSongs.slice(6, 18)
+  const madeForYou = allSongs.length > 12 ? allSongs.slice(0, 20) : allSongs
   const artistList = Object.entries(allArtists).map(([name, data]) => ({
     name,
     image: data.image,
@@ -36,7 +36,7 @@ function Home() {
   }))
 
   return (
-    <div className="page-enter px-4 pt-6">
+    <div className="page-enter px-4" style={{ paddingTop: 'max(24px, env(safe-area-inset-top))' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6 z-10 relative">
         <h1 className="text-2xl font-bold text-white">
@@ -80,9 +80,15 @@ function Home() {
               return (
                 <div
                   key={song.id}
-                  onClick={() => play(song, recentSongs)}
-                  className="min-w-[140px] max-w-[140px] glass rounded-xl overflow-hidden cursor-pointer hover:bg-white/[0.08] transition-colors press-scale group"
+                  className="relative min-w-[140px] max-w-[140px] glass rounded-xl overflow-hidden cursor-pointer hover:bg-white/[0.08] transition-colors press-scale group"
                 >
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removeFromHistory(song.id) }}
+                    className="absolute top-1.5 right-1.5 z-20 w-6 h-6 rounded-full bg-black/60 flex items-center justify-center text-white/70 hover:text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                  >
+                    <IoClose className="text-xs" />
+                  </button>
+                  <div onClick={() => play(song, recentSongs)} className="absolute inset-0 z-10" />
                   <div className="relative aspect-square">
                     <img src={song.coverUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">

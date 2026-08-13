@@ -5,7 +5,7 @@ import { usePlayer } from '../contexts/PlayerContext'
 import { useUserData } from '../contexts/UserDataContext'
 import { useMusicData } from '../contexts/MusicDataContext'
 import TrackRow from '../components/TrackRow'
-import { IoArrowBack, IoPlay, IoHeart, IoDownloadOutline, IoPencil } from 'react-icons/io5'
+import { IoArrowBack, IoPlay, IoHeart, IoDownloadOutline, IoPencil, IoMusicalNotes } from 'react-icons/io5'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 
 export default function PlaylistView() {

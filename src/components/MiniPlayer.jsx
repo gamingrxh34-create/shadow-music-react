@@ -4,7 +4,7 @@ import { IoPlay, IoPause, IoStar, IoStarOutline } from 'react-icons/io5'
 import { motion } from 'framer-motion'
 
 function MiniPlayer({ onExpand }) {
-  const { currentTrack, isPlaying, togglePlay, progress, duration, next, prev } = usePlayer()
+  const { currentTrack, isPlaying, togglePlay, progress, duration, next, prev, seek } = usePlayer()
   const { isSongLiked, toggleLikeSong } = useUserData()
 
   if (!currentTrack) return null
@@ -27,11 +27,25 @@ function MiniPlayer({ onExpand }) {
       className="fixed left-2 right-2 z-40 animate-slide-up"
       style={{ bottom: 'calc(66px + env(safe-area-inset-bottom) + 8px)' }}
     >
-      {/* Progress bar at top */}
-      <div className="absolute top-0 left-0 right-0 h-[2px] bg-white/10 rounded-t-xl overflow-hidden">
+      {/* Interactive Seek Slider */}
+      <div className="absolute top-0 left-0 right-0 h-[3px] rounded-t-xl overflow-visible">
         <div 
-          className="h-full bg-brand-300 transition-all duration-200 ease-linear"
+          className="h-full bg-white/10 rounded-t-xl"
+          style={{ width: '100%' }}
+        />
+        <div 
+          className="absolute top-0 left-0 h-full bg-brand-300 rounded-tl-xl"
           style={{ width: `${progressPercent}%` }}
+        />
+        <input
+          type="range"
+          min="0"
+          max={duration || 0}
+          value={progress}
+          onChange={(e) => { e.stopPropagation(); seek(Number(e.target.value)) }}
+          onClick={(e) => e.stopPropagation()}
+          className="absolute inset-0 w-full opacity-0 cursor-pointer h-3 -top-1"
+          style={{ zIndex: 10 }}
         />
       </div>
 
@@ -39,8 +53,7 @@ function MiniPlayer({ onExpand }) {
         className="glass-strong rounded-xl flex items-center gap-3 p-2 pr-3 cursor-pointer"
         onClick={onExpand}
       >
-        <motion.img 
-          layoutId="album-art"
+        <img 
           src={currentTrack.coverUrl} 
           alt={currentTrack.title}
           className="w-11 h-11 rounded-lg object-cover flex-shrink-0"

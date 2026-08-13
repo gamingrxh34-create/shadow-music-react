@@ -4,6 +4,7 @@ import { useUserData } from './UserDataContext'
 import { useDownload } from './DownloadContext'
 import { useMusicData } from './MusicDataContext'
 import { Capacitor } from '@capacitor/core'
+import { App } from '@capacitor/app'
 import { MediaSession } from '@jofr/capacitor-media-session'
 
 // --- Three separate contexts ---
@@ -329,6 +330,46 @@ export function PlayerProvider({ children }) {
       MediaSession.setActionHandler({ action: 'previoustrack' }, () => prev())
     }
   }, [togglePlay, next, prev])
+
+  // Handle app going to background/foreground to prevent media session crash
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return
+
+    const handlePause = App.addListener('pause', () => {
+      // App is going to background - pause audio if desired, keep media session alive
+      // but safely reset action handlers to avoid ghost callbacks on resume
+      try {
+        MediaSession.setPlaybackState({
+          playbackState: getActiveAudio().paused ? 'paused' : 'playing'
+        }).catch(() => {})
+      } catch (e) { /* ignore */ }
+    })
+
+    const handleResume = App.addListener('resume', () => {
+      // App resumed - re-register all media session handlers defensively
+      try {
+        if (currentTrack) {
+          MediaSession.setMetadata({
+            title: currentTrack.title,
+            artist: currentTrack.artist,
+            artwork: [{ src: currentTrack.coverUrl, sizes: '512x512', type: 'image/jpeg' }]
+          }).catch(() => {})
+        }
+        MediaSession.setActionHandler({ action: 'play' }, () => togglePlay())
+        MediaSession.setActionHandler({ action: 'pause' }, () => togglePlay())
+        MediaSession.setActionHandler({ action: 'nexttrack' }, () => next())
+        MediaSession.setActionHandler({ action: 'previoustrack' }, () => prev())
+        MediaSession.setPlaybackState({
+          playbackState: getActiveAudio().paused ? 'paused' : 'playing'
+        }).catch(() => {})
+      } catch (e) { console.error('Resume media session error:', e) }
+    })
+
+    return () => {
+      handlePause.then(l => l.remove()).catch(() => {})
+      handleResume.then(l => l.remove()).catch(() => {})
+    }
+  }, [togglePlay, next, prev, currentTrack, getActiveAudio])
 
   const toggleShuffle = useCallback(() => setShuffle(prev => !prev), [])
 
