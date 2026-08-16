@@ -68,8 +68,7 @@ function NowPlaying({ onClose }) {
   }
 
   const handleClose = () => {
-    setIsClosing(true)
-    setTimeout(onClose, 350)
+    onClose()
   }
 
   const progressPercent = duration > 0 ? (progress / duration) * 100 : 0
@@ -160,7 +159,7 @@ function NowPlaying({ onClose }) {
                   onChange={(e) => seek(Number(e.target.value))}
                   className="w-full h-1"
                   style={{
-                    background: `linear-gradient(to right, #64ffda ${progressPercent}%, rgba(255,255,255,0.15) ${progressPercent}%)`
+                    background: `linear-gradient(to right, ${dominantColor !== '#020c1b' ? dominantColor : '#fff'} ${progressPercent}%, rgba(255,255,255,0.15) ${progressPercent}%)`
                   }}
                 />
               </div>
@@ -211,23 +210,26 @@ function NowPlaying({ onClose }) {
               <div className="flex-shrink-0 mb-8">
                 <div className="flex items-center justify-between mb-3">
                   <h3 className="text-sm font-bold text-brand-300">LYRICS</h3>
-                  {lyricsLines.length > 6 && (
-                    <button
-                      onClick={() => setShowAllLyrics(prev => !prev)}
-                      className="text-xs text-white/50 hover:text-brand-300 transition-colors"
-                    >
-                      {showAllLyrics ? 'Show Less' : 'Show More'}
-                    </button>
-                  )}
                 </div>
-                <div className="glass rounded-2xl px-5 py-5 overflow-hidden">
-                  {(showAllLyrics ? lyricsLines : lyricsLines.slice(0, 6)).map((line, i) => (
+                <div 
+                  className="glass rounded-2xl px-5 py-5 overflow-hidden relative cursor-pointer active:scale-[0.99] transition-transform"
+                  onClick={() => setShowAllLyrics(!showAllLyrics)}
+                >
+                  {(showAllLyrics ? lyricsLines : lyricsLines.slice(0, 5)).map((line, i) => (
                     <p key={i} className={`text-sm mb-1.5 leading-relaxed ${
                       line === '\u266a' ? 'text-white/15 text-xs my-3' : 'text-white/70'
                     }`}>
                       {line === '\u266a' ? '♪' : line}
                     </p>
                   ))}
+                  
+                  {!showAllLyrics && lyricsLines.length > 5 && (
+                    <div className="mt-4 text-center">
+                      <span className="text-[10px] font-bold text-brand-300/80 tracking-widest uppercase bg-white/5 px-3 py-1.5 rounded-full">
+                        Tap to expand
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
             )}

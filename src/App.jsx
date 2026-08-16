@@ -69,9 +69,11 @@ function App() {
       <BottomNav />
 
       {/* Now Playing Overlay */}
-      {showNowPlaying && (
-        <NowPlaying onClose={() => setShowNowPlaying(false)} />
-      )}
+      <AnimatePresence>
+        {showNowPlaying && (
+          <NowPlaying onClose={() => setShowNowPlaying(false)} />
+        )}
+      </AnimatePresence>
 
       {/* Toast Notifications */}
       <Toast />

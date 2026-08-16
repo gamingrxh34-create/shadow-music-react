@@ -57,7 +57,7 @@ function Home() {
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           <div className="absolute inset-0 p-5 flex flex-col justify-end z-20">
-            <div className="text-[10px] font-black tracking-widest text-brand-300 uppercase mb-2">Editor's Pick</div>
+            <div className="text-[10px] font-black tracking-widest text-brand-300 uppercase mb-2">New Release</div>
             <h2 className="text-2xl font-bold text-white mb-1 truncate">{allSongs[0].title}</h2>
             <p className="text-sm text-white/70 truncate mb-4">{allSongs[0].artist}</p>
             <div className="w-10 h-10 rounded-full bg-brand-300 flex items-center justify-center text-black pl-1 shadow-[0_0_20px_rgba(100,255,218,0.4)]">

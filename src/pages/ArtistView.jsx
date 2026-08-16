@@ -45,7 +45,7 @@ export default function ArtistView() {
         }
       }}
     >
-      <div className="sticky top-0 z-10 glass px-4 py-3 flex items-center gap-4">
+      <div className="sticky top-0 z-10 glass px-4 py-3 flex items-center gap-4" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
         <button onClick={() => navigate(-1)} className="text-white text-2xl press-scale"><IoArrowBack /></button>
         <h1 className="text-lg font-bold text-white truncate">{artist.name}</h1>
       </div>

@@ -4,8 +4,9 @@ import { motion } from 'framer-motion'
 import { usePlayer } from '../contexts/PlayerContext'
 import { useUserData } from '../contexts/UserDataContext'
 import { useMusicData } from '../contexts/MusicDataContext'
+import { useDownload } from '../contexts/DownloadContext'
 import TrackRow from '../components/TrackRow'
-import { IoArrowBack, IoPlay, IoHeart, IoDownloadOutline, IoPencil, IoMusicalNotes } from 'react-icons/io5'
+import { IoArrowBack, IoPlay, IoHeart, IoDownloadOutline, IoCheckmarkCircle, IoPencil, IoMusicalNotes } from 'react-icons/io5'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
 
 export default function PlaylistView() {
@@ -14,6 +15,7 @@ export default function PlaylistView() {
   const { play } = usePlayer()
   const { likedSongIds, playlists, reorderPlaylist, updatePlaylistCover } = useUserData()
   const { songs: allSongs } = useMusicData()
+  const { downloadedSongs, downloadPlaylist, playlistDownloadProgress } = useDownload()
 
   let title, playlistSongs, isLiked, playlist
 
@@ -70,7 +72,7 @@ export default function PlaylistView() {
       }}
     >
       {/* Header */}
-      <div className="sticky top-0 z-10 glass px-4 py-3 flex items-center gap-4">
+      <div className="sticky top-0 z-10 glass px-4 py-3 flex items-center gap-4" style={{ paddingTop: 'max(12px, env(safe-area-inset-top))' }}>
         <button onClick={() => navigate(-1)} className="text-white text-2xl press-scale"><IoArrowBack /></button>
         <h1 className="text-lg font-bold text-white truncate">{title}</h1>
       </div>
@@ -98,11 +100,39 @@ export default function PlaylistView() {
         <h1 className="text-2xl font-bold text-white text-center mb-1">{title}</h1>
         <div className="text-white/50 text-sm mb-1">{playlistSongs.length} songs • {timeStr}</div>
         
-        {/* Download button */}
-        <button className="flex items-center gap-2 text-white/40 text-sm mt-2 mb-6 hover:text-white/60 transition-colors press-scale">
-          <IoDownloadOutline className="text-lg" />
-          <span>Download</span>
-        </button>
+        {/* Download button — only for real playlists, not Liked Songs */}
+        {!isLiked && playlist && (() => {
+          const progress = playlistDownloadProgress[playlist.id]
+          const allDownloaded = playlistSongs.length > 0 && playlistSongs.every(s => downloadedSongs[s.id])
+
+          if (allDownloaded) {
+            return (
+              <div className="flex items-center gap-2 text-brand-300 text-sm mt-2 mb-6">
+                <IoCheckmarkCircle className="text-lg" />
+                <span>Downloaded</span>
+              </div>
+            )
+          }
+
+          if (progress) {
+            return (
+              <div className="flex items-center gap-2 text-white/60 text-sm mt-2 mb-6">
+                <IoDownloadOutline className="text-lg animate-pulse" />
+                <span>Downloading {progress.done}/{progress.total}...</span>
+              </div>
+            )
+          }
+
+          return (
+            <button
+              onClick={() => downloadPlaylist(playlist.id, playlistSongs)}
+              className="flex items-center gap-2 text-white/40 text-sm mt-2 mb-6 hover:text-white/60 transition-colors press-scale"
+            >
+              <IoDownloadOutline className="text-lg" />
+              <span>Download</span>
+            </button>
+          )
+        })()}
 
         {playlistSongs.length > 0 && (
           <button 

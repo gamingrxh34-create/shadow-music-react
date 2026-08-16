@@ -1,9 +1,10 @@
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { motion } from 'framer-motion'
 import { useUserData } from '../contexts/UserDataContext'
 import { useMusicData } from '../contexts/MusicDataContext'
 import TrackRow from '../components/TrackRow'
-import { IoSearch, IoClose } from 'react-icons/io5'
+import { IoSearch, IoClose, IoPerson } from 'react-icons/io5'
 
 const categories = [
   { name: 'Chill', emoji: '🌊', color: 'from-cyan-500/20 to-blue-600/20', keywords: ['chill', 'lo-fi', 'lofi', 'relax', 'calm', 'sleep', 'slow'] },
@@ -18,13 +19,20 @@ function Search() {
   const [query, setQuery] = useState('')
   const [activeMood, setActiveMood] = useState(null)
   const { recentSearches, addRecentSearch, removeRecentSearch, clearRecentSearches } = useUserData()
-  const { songs } = useMusicData()
+  const { songs, artists } = useMusicData()
+  const navigate = useNavigate()
 
-  const filtered = query.trim()
+  const q = query.trim().toLowerCase()
+
+  const filteredArtists = q
+    ? Object.entries(artists).filter(([name]) => name.toLowerCase().includes(q)).map(([name, data]) => ({ name, ...data }))
+    : []
+
+  const filtered = q
     ? songs.filter(s =>
-        s.title.toLowerCase().includes(query.toLowerCase()) ||
-        s.artist.toLowerCase().includes(query.toLowerCase()) ||
-        s.album.toLowerCase().includes(query.toLowerCase())
+        s.title.toLowerCase().includes(q) ||
+        s.artist.toLowerCase().includes(q) ||
+        s.album.toLowerCase().includes(q)
       )
     : []
 
@@ -47,7 +55,7 @@ function Search() {
   }
 
   return (
-    <div className="page-enter px-4 pt-6">
+    <div className="page-enter px-4" style={{ paddingTop: 'max(24px, env(safe-area-inset-top))' }}>
       <h1 className="text-2xl font-bold text-white mb-5">Search</h1>
 
       <div className="relative mb-6">
@@ -64,13 +72,45 @@ function Search() {
 
       {query.trim() ? (
         <div className="flex flex-col">
-          <h3 className="text-sm font-semibold text-white/50 mb-3 px-1">
-            {filtered.length} result{filtered.length !== 1 ? 's' : ''}
-          </h3>
+
+          {/* Artist Results */}
+          {filteredArtists.length > 0 && (
+            <div className="mb-5">
+              <h3 className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3 px-1">Artists</h3>
+              <div className="flex flex-col gap-2">
+                {filteredArtists.map(artist => (
+                  <motion.div
+                    key={artist.name}
+                    whileTap={{ scale: 0.97 }}
+                    onClick={() => navigate(`/artist/${encodeURIComponent(artist.name)}`)}
+                    className="flex items-center gap-4 px-3 py-2.5 rounded-xl hover:bg-white/5 active:bg-white/10 cursor-pointer transition-colors"
+                  >
+                    {artist.image ? (
+                      <img src={artist.image} alt={artist.name} className="w-12 h-12 rounded-full object-cover flex-shrink-0" />
+                    ) : (
+                      <div className="w-12 h-12 rounded-full bg-white/10 flex items-center justify-center flex-shrink-0">
+                        <IoPerson className="text-white/40 text-xl" />
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-white font-semibold text-sm">{artist.name}</div>
+                      <div className="text-white/40 text-xs">Artist</div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Song Results */}
+          {filtered.length > 0 && (
+            <h3 className="text-xs font-bold text-white/40 uppercase tracking-widest mb-3 px-1">Songs</h3>
+          )}
           {filtered.map((track, i) => (
             <TrackRow key={track.id} track={track} index={i} allTracks={filtered} />
           ))}
-          {filtered.length === 0 && (
+
+          {filteredArtists.length === 0 && filtered.length === 0 && (
             <motion.div 
               className="text-center py-16"
               initial={{ opacity: 0, y: 8 }}

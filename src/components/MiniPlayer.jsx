@@ -1,13 +1,36 @@
+import { useState, useEffect } from 'react'
 import { usePlayer } from '../contexts/PlayerContext'
 import { useUserData } from '../contexts/UserDataContext'
 import { IoPlay, IoPause, IoStar, IoStarOutline } from 'react-icons/io5'
 import { motion } from 'framer-motion'
+import { FastAverageColor } from 'fast-average-color'
 
 function MiniPlayer({ onExpand }) {
   const { currentTrack, isPlaying, togglePlay, progress, duration, next, prev, seek } = usePlayer()
   const { isSongLiked, toggleLikeSong } = useUserData()
 
   if (!currentTrack) return null
+
+  const [dominantColor, setDominantColor] = useState('rgba(255,255,255,0.05)')
+
+  useEffect(() => {
+    if (currentTrack?.coverUrl) {
+      const fac = new FastAverageColor()
+      // Use tiny Cloudinary thumbnail for color extraction to avoid blocking main thread
+      let colorUrl = currentTrack.coverUrl
+      if (colorUrl.includes('/upload/')) {
+        colorUrl = colorUrl.replace('/upload/', '/upload/w_50,h_50,c_fill/')
+      }
+      fac.getColorAsync(colorUrl)
+        .then(color => {
+          setDominantColor(color.hex)
+        })
+        .catch(e => {
+          console.error('Failed to get dominant color', e)
+          setDominantColor('rgba(255,255,255,0.05)')
+        })
+    }
+  }, [currentTrack?.coverUrl])
 
   const progressPercent = duration > 0 ? (progress / duration) * 100 : 0
   const liked = isSongLiked(currentTrack.id)
@@ -50,7 +73,8 @@ function MiniPlayer({ onExpand }) {
       </div>
 
       <div 
-        className="glass-strong rounded-xl flex items-center gap-3 p-2 pr-3 cursor-pointer"
+        className="rounded-xl flex items-center gap-3 p-2 pr-3 cursor-pointer shadow-lg transition-colors duration-1000 border border-white/5"
+        style={{ backgroundColor: dominantColor }}
         onClick={onExpand}
       >
         <img 

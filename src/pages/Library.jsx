@@ -42,7 +42,7 @@ function Library() {
   }
 
   return (
-    <div className="page-enter px-4 pt-6">
+    <div className="page-enter px-4" style={{ paddingTop: 'max(24px, env(safe-area-inset-top))' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
