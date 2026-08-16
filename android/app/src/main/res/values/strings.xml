@@ -4,4 +4,5 @@
     <string name="title_activity_main">Shadow Music</string>
     <string name="package_name">com.shadowmusic.app</string>
     <string name="custom_url_scheme">com.shadowmusic.app</string>
+    <string name="server_client_id">605927658698-g5o8pavu2fmfrfp4sgaf5knkceba535v.apps.googleusercontent.com</string>
 </resources>

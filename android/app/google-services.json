@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "605927658698",
+    "project_id": "shadow-music-f2b43",
+    "storage_bucket": "shadow-music-f2b43.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:605927658698:android:1597d35fdce024ab521033",
+        "android_client_info": {
+          "package_name": "com.shadowmusic.app"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "605927658698-g5o8pavu2fmfrfp4sgaf5knkceba535v.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCR4NuwYsufmDCPXg7X2evZZUv2CFcYo30"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "605927658698-g5o8pavu2fmfrfp4sgaf5knkceba535v.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
