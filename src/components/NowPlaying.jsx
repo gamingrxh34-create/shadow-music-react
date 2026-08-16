@@ -213,7 +213,7 @@ function NowPlaying({ onClose }) {
                 </div>
                 <div 
                   className="glass rounded-2xl px-5 py-5 overflow-hidden relative cursor-pointer active:scale-[0.99] transition-transform"
-                  onClick={() => setShowAllLyrics(!showAllLyrics)}
+                  onClick={() => setShowAllLyrics(prev => !prev)}
                 >
                   {(showAllLyrics ? lyricsLines : lyricsLines.slice(0, 5)).map((line, i) => (
                     <p key={i} className={`text-sm mb-1.5 leading-relaxed ${
@@ -223,10 +223,10 @@ function NowPlaying({ onClose }) {
                     </p>
                   ))}
                   
-                  {!showAllLyrics && lyricsLines.length > 5 && (
+                  {lyricsLines.length > 5 && (
                     <div className="mt-4 text-center">
                       <span className="text-[10px] font-bold text-brand-300/80 tracking-widest uppercase bg-white/5 px-3 py-1.5 rounded-full">
-                        Tap to expand
+                        {showAllLyrics ? 'Tap to collapse' : 'Tap to expand'}
                       </span>
                     </div>
                   )}

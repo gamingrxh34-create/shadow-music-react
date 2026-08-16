@@ -203,42 +203,72 @@ function Library() {
       )}
 
       {/* Downloads Tab */}
-      {activeFilter === 'Downloads' && (
-        <div className="flex flex-col pb-24">
-          {Object.keys(downloadedSongs).length === 0 ? (
-            <motion.div 
-              className="text-center py-16 flex flex-col items-center"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-            >
-              <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
-                <IoAdd className="text-white/15 text-3xl transform rotate-180" />
-              </div>
-              <div className="text-white/30 text-lg font-medium">No downloads yet</div>
-              <div className="text-white/20 text-sm mt-2 mb-6">Download songs to listen offline</div>
-              <button 
-                onClick={() => navigate('/search')}
-                className="px-6 py-2 rounded-full bg-white/10 text-white font-semibold press-scale hover:bg-white/20 transition-colors"
+      {activeFilter === 'Downloads' && (() => {
+        const downloadedCustomPlaylists = playlists.filter(p => p.songIds.some(id => downloadedSongs[id]))
+        const hasDownloadedLikedSongs = likedSongIds.some(id => downloadedSongs[id])
+        const hasAnyDownloads = Object.keys(downloadedSongs).length > 0
+
+        return (
+          <div className="flex flex-col pb-24">
+            {!hasAnyDownloads ? (
+              <motion.div 
+                className="text-center py-16 flex flex-col items-center"
+                initial={{ opacity: 0, y: 8 }}
+                animate={{ opacity: 1, y: 0 }}
               >
-                Find Songs
-              </button>
-            </motion.div>
-          ) : (
-            <div className="flex flex-col">
-              {songs
-                .filter(song => downloadedSongs[song.id])
-                .map((track, index) => (
-                  <TrackRow 
-                    key={track.id} 
-                    track={track} 
-                    index={index} 
-                    allTracks={songs.filter(s => downloadedSongs[s.id])} 
-                  />
+                <div className="w-16 h-16 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                  <IoAdd className="text-white/15 text-3xl transform rotate-180" />
+                </div>
+                <div className="text-white/30 text-lg font-medium">No downloads yet</div>
+                <div className="text-white/20 text-sm mt-2 mb-6">Download playlists to listen offline</div>
+                <button 
+                  onClick={() => { setActiveFilter('Playlists') }}
+                  className="px-6 py-2 rounded-full bg-white/10 text-white font-semibold press-scale hover:bg-white/20 transition-colors"
+                >
+                  View Playlists
+                </button>
+              </motion.div>
+            ) : (
+              <div className="flex flex-col">
+                {hasDownloadedLikedSongs && (
+                  <div
+                    onClick={() => navigate('/playlist/liked')}
+                    className="flex items-center gap-3 py-3 cursor-pointer hover:bg-white/5 active:bg-white/[0.08] rounded-lg px-2 transition-colors"
+                  >
+                    <div className="w-14 h-14 rounded-md bg-gradient-to-br from-brand-300/80 to-brand-700 flex items-center justify-center flex-shrink-0">
+                      <IoHeart className="text-white text-2xl" />
+                    </div>
+                    <div>
+                      <div className="text-base font-semibold text-white">Liked Songs</div>
+                      <div className="text-sm font-semibold text-brand-300">Downloaded Playlist</div>
+                    </div>
+                  </div>
+                )}
+                
+                {downloadedCustomPlaylists.map(playlist => (
+                  <div
+                    key={playlist.id}
+                    onClick={() => navigate(`/playlist/${playlist.id}`)}
+                    className="flex items-center gap-3 py-3 cursor-pointer hover:bg-white/5 active:bg-white/[0.08] rounded-lg px-2 transition-colors"
+                  >
+                    {getPlaylistCover(playlist) ? (
+                      <img src={getPlaylistCover(playlist)} alt="" className="w-14 h-14 rounded-md object-cover" />
+                    ) : (
+                      <div className="w-14 h-14 rounded-md bg-white/[0.08] flex items-center justify-center">
+                        <IoMusicalNotes className="text-white/40 text-xl" />
+                      </div>
+                    )}
+                    <div>
+                      <div className="text-base font-semibold text-white">{playlist.name}</div>
+                      <div className="text-sm font-semibold text-brand-300">Downloaded Playlist</div>
+                    </div>
+                  </div>
                 ))}
-            </div>
-          )}
-        </div>
-      )}
+              </div>
+            )}
+          </div>
+        )
+      })()}
 
       {/* Create Playlist Modal */}
       {showCreateModal && (

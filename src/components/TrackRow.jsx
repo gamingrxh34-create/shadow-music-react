@@ -138,7 +138,7 @@ function TrackRow({ track, index, allTracks, playlistId, draggableProvided, drag
             {playlists.map(p => (
               <button 
                 key={p.id}
-                onClick={() => { toggleLikeSong(track.id); addSongToPlaylist(p.id, track.id); setSheetType(null) }}
+                onClick={() => { addSongToPlaylist(p.id, track.id); setSheetType(null) }}
                 className="flex items-center gap-3 p-3 rounded-lg hover:bg-white/5 transition-colors w-full"
               >
                 <IoMusicalNotes className="text-lg text-white/50" />

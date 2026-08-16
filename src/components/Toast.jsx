@@ -18,13 +18,14 @@ function Toast() {
     <AnimatePresence>
       {toastMessage && (
         <motion.div
-          initial={{ y: 50, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          exit={{ y: 50, opacity: 0 }}
-          transition={{ type: 'spring', stiffness: 300, damping: 25 }}
-          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-[100] w-max max-w-[90%] pointer-events-none"
+          initial={{ y: -40, opacity: 0, scale: 0.9 }}
+          animate={{ y: 0, opacity: 1, scale: 1 }}
+          exit={{ y: -30, opacity: 0, scale: 0.9 }}
+          transition={{ type: 'spring', stiffness: 400, damping: 30 }}
+          className="fixed top-0 left-0 right-0 z-[150] pointer-events-none flex justify-center px-4"
+          style={{ paddingTop: 'max(16px, env(safe-area-inset-top))' }}
         >
-          <div className="bg-[#2A2A2A] text-white px-5 py-3 rounded-full shadow-lg border border-white/10 text-center font-medium text-sm glass-strong">
+          <div className="bg-white text-black px-6 py-3.5 rounded-full shadow-2xl font-bold text-sm flex items-center justify-center max-w-md w-auto mx-auto border border-white/20">
             {toastMessage}
           </div>
         </motion.div>

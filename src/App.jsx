@@ -71,7 +71,7 @@ function App() {
       {/* Now Playing Overlay */}
       <AnimatePresence>
         {showNowPlaying && (
-          <NowPlaying onClose={() => setShowNowPlaying(false)} />
+          <NowPlaying key="now-playing" onClose={() => setShowNowPlaying(false)} />
         )}
       </AnimatePresence>
 

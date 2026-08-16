@@ -131,6 +131,7 @@ function Home() {
               </div>
             ))
           )}
+          <div className="w-4 shrink-0" />
         </div>
       </section>
 
@@ -153,10 +154,12 @@ function Home() {
               </div>
             ))
           )}
+          <div className="w-4 shrink-0" />
         </div>
       </section>
       
       {showSettings && <SettingsModal onClose={() => setShowSettings(false)} />}
+      <div className="h-12" />
     </div>
   )
 }
