@@ -86,6 +86,7 @@ export default function ArtistView() {
           <TrackRow key={track.id} track={track} index={i} allTracks={songs} />
         ))}
       </div>
+      <div className="h-24" />
     </motion.div>
   )
 }

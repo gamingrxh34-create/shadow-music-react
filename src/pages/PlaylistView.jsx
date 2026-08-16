@@ -199,6 +199,7 @@ export default function PlaylistView() {
           </Droppable>
         </DragDropContext>
       )}
+      <div className="h-24" />
     </motion.div>
   )
 }
