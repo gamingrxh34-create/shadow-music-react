@@ -48,6 +48,7 @@ export function AuthProvider({ children }) {
       }
     } catch (error) {
       console.error('Sign in error:', error)
+      alert("Login Error: " + (error.message || error))
     }
   }
 

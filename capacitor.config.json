@@ -7,5 +7,11 @@
       "shadow-music-f2b43.firebaseapp.com",
       "*.firebaseapp.com"
     ]
+  },
+  "plugins": {
+    "FirebaseAuthentication": {
+      "skipNativeAuth": false,
+      "providers": ["google.com"]
+    }
   }
 }

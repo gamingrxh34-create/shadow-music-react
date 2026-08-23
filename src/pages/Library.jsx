@@ -207,6 +207,7 @@ function Library() {
         const downloadedCustomPlaylists = playlists.filter(p => p.songIds.some(id => downloadedSongs[id]))
         const hasDownloadedLikedSongs = likedSongIds.some(id => downloadedSongs[id])
         const hasAnyDownloads = Object.keys(downloadedSongs).length > 0
+        const downloadedLikedCount = likedSongIds.filter(id => downloadedSongs[id]).length
 
         return (
           <div className="flex flex-col pb-24">
@@ -240,30 +241,37 @@ function Library() {
                     </div>
                     <div>
                       <div className="text-base font-semibold text-white">Liked Songs</div>
-                      <div className="text-sm font-semibold text-brand-300">Downloaded Playlist</div>
+                      <div className="text-sm font-semibold text-brand-300">
+                        {downloadedLikedCount === likedSongIds.length ? 'Fully Downloaded' : `${downloadedLikedCount} of ${likedSongIds.length} downloaded`}
+                      </div>
                     </div>
                   </div>
                 )}
                 
-                {downloadedCustomPlaylists.map(playlist => (
-                  <div
-                    key={playlist.id}
-                    onClick={() => navigate(`/playlist/${playlist.id}`)}
-                    className="flex items-center gap-3 py-3 cursor-pointer hover:bg-white/5 active:bg-white/[0.08] rounded-lg px-2 transition-colors"
-                  >
-                    {getPlaylistCover(playlist) ? (
-                      <img src={getPlaylistCover(playlist)} alt="" className="w-14 h-14 rounded-md object-cover" />
-                    ) : (
-                      <div className="w-14 h-14 rounded-md bg-white/[0.08] flex items-center justify-center">
-                        <IoMusicalNotes className="text-white/40 text-xl" />
+                {downloadedCustomPlaylists.map(playlist => {
+                  const downloadedCount = playlist.songIds.filter(id => downloadedSongs[id]).length
+                  return (
+                    <div
+                      key={playlist.id}
+                      onClick={() => navigate(`/playlist/${playlist.id}`)}
+                      className="flex items-center gap-3 py-3 cursor-pointer hover:bg-white/5 active:bg-white/[0.08] rounded-lg px-2 transition-colors"
+                    >
+                      {getPlaylistCover(playlist) ? (
+                        <img src={getPlaylistCover(playlist)} alt="" className="w-14 h-14 rounded-md object-cover" />
+                      ) : (
+                        <div className="w-14 h-14 rounded-md bg-white/[0.08] flex items-center justify-center">
+                          <IoMusicalNotes className="text-white/40 text-xl" />
+                        </div>
+                      )}
+                      <div>
+                        <div className="text-base font-semibold text-white">{playlist.name}</div>
+                        <div className="text-sm font-semibold text-brand-300">
+                          {downloadedCount === playlist.songIds.length ? 'Fully Downloaded' : `${downloadedCount} of ${playlist.songIds.length} downloaded`}
+                        </div>
                       </div>
-                    )}
-                    <div>
-                      <div className="text-base font-semibold text-white">{playlist.name}</div>
-                      <div className="text-sm font-semibold text-brand-300">Downloaded Playlist</div>
                     </div>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </div>
