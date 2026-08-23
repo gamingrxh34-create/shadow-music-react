@@ -37,10 +37,10 @@ jobs:
 
       - name: Cache Debug Keystore
         id: cache-keystore
-        uses: actions/cache@v4
+        uses: actions/cache@v3
         with:
           path: ~/.android/debug.keystore
-          key: android-debug-keystore-v1
+          key: ${{ runner.os }}-android-debug-keystore-v1
 
       - name: Generate Debug Keystore
         if: steps.cache-keystore.outputs.cache-hit != 'true'
