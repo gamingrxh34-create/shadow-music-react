@@ -14,6 +14,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "605927658698-1tj4dnqs6jav4opv9t9rk50ihfjsmfbq.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.shadowmusic.app",
+            "certificate_hash": "42b11bc7abfb7049eb6fbf77d5b90eee8213a8bc"
+          }
+        },
+        {
           "client_id": "605927658698-g5o8pavu2fmfrfp4sgaf5knkceba535v.apps.googleusercontent.com",
           "client_type": 3
         }
