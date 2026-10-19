@@ -42,14 +42,19 @@ function Library() {
   }
 
   return (
-    <div className="page-enter px-4" style={{ paddingTop: 'max(24px, env(safe-area-inset-top))' }}>
+    <div className="page-enter px-4" style={{ paddingTop: 'calc(max(44px, env(safe-area-inset-top, 0px)) + 14px)' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-5">
         <div className="flex items-center gap-3">
           <img
-            src={user?.photoURL || 'https://via.placeholder.com/40'}
+            src={user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'User')}&background=38d1b0&color=050505&bold=true`}
             alt=""
-            className="w-8 h-8 rounded-full object-cover"
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'User')}&background=38d1b0&color=050505&bold=true`;
+            }}
+            className="w-9 h-9 rounded-full object-cover border border-white/10"
           />
           <h1 className="text-2xl font-bold text-white">Your Library</h1>
         </div>

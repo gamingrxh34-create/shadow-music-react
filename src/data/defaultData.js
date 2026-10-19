@@ -1,4 +1,9 @@
 export const DEFAULT_ARTISTS = {
+  "Elvarn": {
+    name: "Elvarn",
+    bio: "Elvarn is an emerging musical artist known for emotional, high-energy storytelling tracks including Anime T-Shirt, I Want to Eat Your Pancreas, and Burn Through the Dark.",
+    image: "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&auto=format&fit=crop&q=80"
+  },
   "The Neighbourhood": {
     name: "The Neighbourhood",
     bio: "The Neighbourhood (THE NBHD) is an American rock band formed in Newbury Park, California.",
@@ -62,6 +67,51 @@ export const DEFAULT_ARTISTS = {
 }
 
 export const DEFAULT_SONGS = [
+  {
+    id: "elvarn1",
+    title: "Anime T-Shirt",
+    artist: "Elvarn",
+    album: "Midnight Otaku",
+    coverUrl: "https://images.unsplash.com/photo-1607604276583-eef5d076aa5f?w=400&auto=format&fit=crop&q=80",
+    audioUrl: "https://res.cloudinary.com/dytac5x9v/video/upload/v1780917241/The_Neighbourhood_-_Sweater_Weather_Official_Video_geqgbj.mp3",
+    lyrics: "Walking down the street in my favorite anime tee<br>People looking sideways like what is that supposed to be<br>Graphic print faded from a thousand midnight streams<br>Living out my chapter inside fluorescent dreams"
+  },
+  {
+    id: "elvarn2",
+    title: "I Want to Eat Your Pancreas",
+    artist: "Elvarn",
+    album: "Sakura Season",
+    coverUrl: "https://images.unsplash.com/photo-1528164344705-475426879c0d?w=400&auto=format&fit=crop&q=80",
+    audioUrl: "https://res.cloudinary.com/dytac5x9v/video/upload/q_auto/f_auto/v1780917244/The_Neighbourhood_-_Reflections_Official_Audio_bywm2o.mp3",
+    lyrics: "Sakura in the springtime<br>Falling petals, fading light<br>You were eating every moment<br>Making memories before the night<br>You said you wanted my pancreas<br>To become a part of me<br>But I already gave you everything"
+  },
+  {
+    id: "elvarn3",
+    title: "Harem King",
+    artist: "Elvarn",
+    album: "Crimson Gear",
+    coverUrl: "https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=400&auto=format&fit=crop&q=80",
+    audioUrl: "https://res.cloudinary.com/dytac5x9v/video/upload/q_auto/f_auto/v1780917249/The_Neighbourhood_-_Softcore_Official_Audio_yxdwmd.mp3",
+    lyrics: "Harem King, harem king, he was so damn close<br>Rias on his arm, Akeno giving him the most<br>Season five was supposed to show us everything we bled for<br>Issei in white hair, the moment that we need more"
+  },
+  {
+    id: "elvarn4",
+    title: "Burn Through the Dark",
+    artist: "Elvarn",
+    album: "Phoenix Ashes",
+    coverUrl: "https://images.unsplash.com/photo-1509198397868-475647b2a1e5?w=400&auto=format&fit=crop&q=80",
+    audioUrl: "https://res.cloudinary.com/dytac5x9v/video/upload/q_auto/f_auto/v1780917238/The_Neighbourhood_-_Daddy_Issues_Official_Video_syhing.mp3",
+    lyrics: "I'll burn through the dark<br>I'll tear through the rain<br>No chain can hold me<br>No ghost can remain<br>I rise from the ash<br>I bleed but I stand"
+  },
+  {
+    id: "elvarn5",
+    title: "Sigma Crash Out V2",
+    artist: "Elvarn",
+    album: "The Rizz Tape",
+    coverUrl: "https://images.unsplash.com/photo-1518709268805-4e9042af9f23?w=400&auto=format&fit=crop&q=80",
+    audioUrl: "https://res.cloudinary.com/dytac5x9v/video/upload/v1780917241/The_Neighbourhood_-_Sweater_Weather_Official_Video_geqgbj.mp3",
+    lyrics: "Woke up and chose violence hit the door frame first<br>Told myself I'm that guy then remembered my net worth<br>Ate a raw carrot called it clean eating day<br>Posted gym selfie from 2019 anyway"
+  },
   {
     id: "tn1",
     title: "Sweater Weather",

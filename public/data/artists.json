@@ -1,58 +1,54 @@
-Created At: 2026-08-04T17:48:06+05:30
-Completed At: 2026-08-04T17:48:06+05:30
-File Path: `file:///c:/Users/sharm/OneDrive/Desktop/Shadow%20music/shadow-music-v2/data/artists.json`
-Total Lines: 58
-Total Bytes: 3122
-Showing lines 1 to 50
-The following code has been modified to include a line number before every line, in the format: <line_number>: <original_line>. Please note that any changes targeting the original code should remove the line number, colon, and leading space.
-1: {
-2:   "The Neighbourhood": {
-3:     "bio": "The Neighbourhood (sometimes rendered as 'THE NBHD') is an American rock band formed in Newbury Park, California, in 2011.",
-4:     "image": "https://res.cloudinary.com/dytac5x9v/image/upload/v1781435328/the_neighood_dp_od6he5.webp"
-5:   },
-6:   "TV Girl": {
-7:     "bio": "TV Girl is an American indie pop band from San Diego, California. Their sound has been described as 'hypnotic pop'.",
-8:     "image": "https://res.cloudinary.com/dytac5x9v/image/upload/v1782042887/TV_Girl_-_Who_Really_Cares_jgxmhp.png"
-9:   },
-10:   "Tanveer Evan": {
-11:     "bio": "Tanveer Evan is a talented artist known for his deeply emotional and resonant tracks, blending heartfelt lyrics with beautiful melodies.",
-12:     "image": ""
-13:   },
-14:   "Lana Del Rey": {
-15:     "bio": "Lana Del Rey is an American singer-songwriter known for her cinematic music style and exploration of tragic romance, glamour, and melancholia.",
-16:     "image": ""
-17:   },
-18:   "Childish Gambino": {
-19:     "bio": "Donald Glover, performing as Childish Gambino, is an American multi-hyphenate artist whose musical style spans hip hop, R&B, funk, and soul.",
-20:     "image": ""
-21:   },
-22:   "Kanye West": {
-23:     "bio": "Kanye West, officially known as Ye, is an American rapper, singer, and producer widely regarded as one of the most influential hip-hop artists of his generation.",
-24:     "image": ""
-25:   },
-26:   "Tyler, The Creator": {
-27:     "bio": "Tyler, The Creator is an American rapper, record producer, and director known for his innovative, boundary-pushing style and creative world-building.",
-28:     "image": ""
-29:   },
-30:   "Radiohead": {
-31:     "bio": "Radiohead are an English rock band formed in 1985. They are widely regarded as one of the most innovative and acclaimed rock bands of all time.",
-32:     "image": ""
-33:   },
-34:   "Ed Sheeran": {
-35:     "bio": "Ed Sheeran is an English singer-songwriter known for his acoustic-driven pop hits, memorable melodies, and deeply personal lyricism.",
-36:     "image": ""
-37:   },
-38:   "Eminem": {
-39:     "bio": "Eminem is an American rapper and record producer, widely considered one of the greatest, most technical, and most influential rappers of all time.",
-40:     "image": "https://res.cloudinary.com/dytac5x9v/image/upload/v1782043181/Eminem_wxv2l8.jpg"
-41:   },
-42:   "Mac DeMarco": {
-43:     "bio": "Mac DeMarco is a Canadian singer-songwriter and multi-instrumentalist.",
-44:     "image": "https://res.cloudinary.com/dytac5x9v/image/upload/v1783246424/Mac_DeMarco_rkrf4u.jpg"
-45:   },
-46:   "Malcolm Todd": {
-47:     "bio": "Malcolm Todd is a talented artist.",
-48:     "image": "https://res.cloudinary.com/dytac5x9v/image/upload/v1783250385/malcolm_todd_fsu0by.jpg"
-49:   },
-50:   "Elvarn": {
-The above content does NOT show the entire file contents. If you need to view any lines of the file which were not shown to complete your task, call this tool again to view those lines.
+{
+  "The Neighbourhood": {
+    "bio": "The Neighbourhood (sometimes rendered as 'THE NBHD') is an American rock band formed in Newbury Park, California, in 2011.",
+    "image": "https://res.cloudinary.com/dytac5x9v/image/upload/v1781435328/the_neighood_dp_od6he5.webp"
+  },
+  "TV Girl": {
+    "bio": "TV Girl is an American indie pop band from San Diego, California. Their sound has been described as 'hypnotic pop'.",
+    "image": "https://res.cloudinary.com/dytac5x9v/image/upload/v1782042887/TV_Girl_-_Who_Really_Cares_jgxmhp.png"
+  },
+  "Tanveer Evan": {
+    "bio": "Tanveer Evan is a talented artist known for his deeply emotional and resonant tracks, blending heartfelt lyrics with beautiful melodies.",
+    "image": ""
+  },
+  "Lana Del Rey": {
+    "bio": "Lana Del Rey is an American singer-songwriter known for her cinematic music style and exploration of tragic romance, glamour, and melancholia.",
+    "image": ""
+  },
+  "Childish Gambino": {
+    "bio": "Donald Glover, performing as Childish Gambino, is an American multi-hyphenate artist whose musical style spans hip hop, R&B, funk, and soul.",
+    "image": ""
+  },
+  "Kanye West": {
+    "bio": "Kanye West, officially known as Ye, is an American rapper, singer, and producer widely regarded as one of the most influential hip-hop artists of his generation.",
+    "image": ""
+  },
+  "Tyler, The Creator": {
+    "bio": "Tyler, The Creator is an American rapper, record producer, and director known for his innovative, boundary-pushing style and creative world-building.",
+    "image": ""
+  },
+  "Radiohead": {
+    "bio": "Radiohead are an English rock band formed in 1985. They are widely regarded as one of the most innovative and acclaimed rock bands of all time.",
+    "image": ""
+  },
+  "Ed Sheeran": {
+    "bio": "Ed Sheeran is an English singer-songwriter known for his acoustic-driven pop hits, memorable melodies, and deeply personal lyricism.",
+    "image": ""
+  },
+  "Eminem": {
+    "bio": "Eminem is an American rapper and record producer, widely considered one of the greatest, most technical, and most influential rappers of all time.",
+    "image": "https://res.cloudinary.com/dytac5x9v/image/upload/v1782043181/Eminem_wxv2l8.jpg"
+  },
+  "Mac DeMarco": {
+    "bio": "Mac DeMarco is a Canadian singer-songwriter and multi-instrumentalist.",
+    "image": "https://res.cloudinary.com/dytac5x9v/image/upload/v1783246424/Mac_DeMarco_rkrf4u.jpg"
+  },
+  "Malcolm Todd": {
+    "bio": "Malcolm Todd is a talented artist.",
+    "image": "https://res.cloudinary.com/dytac5x9v/image/upload/v1783250385/malcolm_todd_fsu0by.jpg"
+  },
+  "Elvarn": {
+    "bio": "Elvarn is an emerging musical artist known for emotional, high-energy storytelling tracks including Anime T-Shirt, I Want to Eat Your Pancreas, and Burn Through the Dark.",
+    "image": "https://images.unsplash.com/photo-1578632767115-351597cf2477?w=400&auto=format&fit=crop&q=80"
+  }
+}

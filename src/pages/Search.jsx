@@ -55,7 +55,7 @@ function Search() {
   }
 
   return (
-    <div className="page-enter px-4" style={{ paddingTop: 'max(24px, env(safe-area-inset-top))' }}>
+    <div className="page-enter px-4" style={{ paddingTop: 'calc(max(44px, env(safe-area-inset-top, 0px)) + 14px)' }}>
       <h1 className="text-2xl font-bold text-white mb-5">Search</h1>
 
       <div className="relative mb-6">

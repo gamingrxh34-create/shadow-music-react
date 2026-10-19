@@ -13,7 +13,16 @@ export default function SettingsModal({ onClose }) {
       content: (
         <div className="flex flex-col gap-4">
           <div className="flex flex-col items-center gap-3 py-4">
-            <img src={user?.photoURL || 'https://via.placeholder.com/80'} alt="" className="w-20 h-20 rounded-full object-cover shadow-lg" />
+            <img 
+              src={user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'User')}&background=38d1b0&color=050505&bold=true`} 
+              alt="" 
+              referrerPolicy="no-referrer"
+              onError={(e) => {
+                e.currentTarget.onerror = null;
+                e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'User')}&background=38d1b0&color=050505&bold=true`;
+              }}
+              className="w-20 h-20 rounded-full object-cover shadow-lg border border-white/10" 
+            />
             <div className="text-center">
               <div className="text-xl font-bold text-white">{user?.displayName || 'User'}</div>
               <div className="text-sm text-white/50">{user?.email}</div>
@@ -107,7 +116,16 @@ export default function SettingsModal({ onClose }) {
             <>
               {/* Profile Card */}
               <div className="flex items-center gap-4 bg-white/5 p-4 rounded-xl">
-                <img src={user?.photoURL || 'https://via.placeholder.com/60'} alt="" className="w-14 h-14 rounded-full object-cover shadow-md" />
+                <img 
+                  src={user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'User')}&background=38d1b0&color=050505&bold=true`} 
+                  alt="" 
+                  referrerPolicy="no-referrer"
+                  onError={(e) => {
+                    e.currentTarget.onerror = null;
+                    e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user?.displayName || 'User')}&background=38d1b0&color=050505&bold=true`;
+                  }}
+                  className="w-14 h-14 rounded-full object-cover shadow-md border border-white/10" 
+                />
                 <div>
                   <div className="text-lg font-bold text-white">{user?.displayName || 'User'}</div>
                   <div className="text-sm text-white/50">{user?.email}</div>

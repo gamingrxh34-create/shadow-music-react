@@ -34,8 +34,16 @@ export function MusicDataProvider({ children }) {
         }
 
         if (shouldUseCache) {
-          setSongs(JSON.parse(cachedSongsStr.value))
-          setArtists(JSON.parse(cachedArtistsStr.value))
+          const cachedSongs = JSON.parse(cachedSongsStr.value) || []
+          const cachedArtists = JSON.parse(cachedArtistsStr.value) || {}
+          
+          // Ensure default artists (like Elvarn) and their tracks are always included
+          const mergedArtists = { ...DEFAULT_ARTISTS, ...cachedArtists }
+          const cachedSongIds = new Set(cachedSongs.map(s => s.id))
+          const missingDefaults = DEFAULT_SONGS.filter(s => !cachedSongIds.has(s.id))
+          
+          setSongs([...cachedSongs, ...missingDefaults])
+          setArtists(mergedArtists)
           setLoading(false)
           return
         }
@@ -51,22 +59,33 @@ export function MusicDataProvider({ children }) {
           fetchedArtists[doc.id] = { id: doc.id, ...doc.data() }
         })
 
-        setSongs(fetchedSongs)
-        setArtists(fetchedArtists)
+        // Always merge with default artists and tracks (guarantees Elvarn is present)
+        const finalArtists = { ...DEFAULT_ARTISTS, ...fetchedArtists }
+        const fetchedIds = new Set(fetchedSongs.map(s => s.id))
+        const missingSongs = DEFAULT_SONGS.filter(s => !fetchedIds.has(s.id))
+        const finalSongs = [...fetchedSongs, ...missingSongs]
+
+        setSongs(finalSongs)
+        setArtists(finalArtists)
         setLoading(false)
 
         // Cache the data
-        await Preferences.set({ key: 'cached_songs', value: JSON.stringify(fetchedSongs) })
-        await Preferences.set({ key: 'cached_artists', value: JSON.stringify(fetchedArtists) })
+        await Preferences.set({ key: 'cached_songs', value: JSON.stringify(finalSongs) })
+        await Preferences.set({ key: 'cached_artists', value: JSON.stringify(finalArtists) })
         await Preferences.set({ key: 'music_data_last_fetched', value: Date.now().toString() })
       } catch (error) {
         console.error("Error fetching music data:", error)
-        // Fallback to cache even if stale, if available
+        // Fallback to cache or defaults
         const cachedSongsStr = await Preferences.get({ key: 'cached_songs' })
         const cachedArtistsStr = await Preferences.get({ key: 'cached_artists' })
         if (cachedSongsStr.value && cachedArtistsStr.value) {
-          setSongs(JSON.parse(cachedSongsStr.value))
-          setArtists(JSON.parse(cachedArtistsStr.value))
+          const cachedSongs = JSON.parse(cachedSongsStr.value) || []
+          const cachedArtists = JSON.parse(cachedArtistsStr.value) || {}
+          setSongs([...cachedSongs, ...DEFAULT_SONGS.filter(s => !cachedSongs.some(c => c.id === s.id))])
+          setArtists({ ...DEFAULT_ARTISTS, ...cachedArtists })
+        } else {
+          setSongs(DEFAULT_SONGS)
+          setArtists(DEFAULT_ARTISTS)
         }
         setLoading(false)
       }

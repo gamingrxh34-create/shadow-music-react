@@ -36,14 +36,23 @@ function Home() {
   }))
 
   return (
-    <div className="page-enter px-4" style={{ paddingTop: 'max(24px, env(safe-area-inset-top))' }}>
+    <div className="page-enter px-4" style={{ paddingTop: 'calc(max(44px, env(safe-area-inset-top, 0px)) + 14px)' }}>
       {/* Header */}
       <div className="flex items-center justify-between mb-6 z-10 relative">
         <h1 className="text-2xl font-bold text-white">
           {getGreeting()}, <span className="text-brand-300">{firstName}</span>
         </h1>
-        <button onClick={() => setShowSettings(true)} className="w-10 h-10 rounded-full overflow-hidden border border-white/10 press-scale">
-          <img src={user?.photoURL || 'https://via.placeholder.com/40'} alt="Profile" className="w-full h-full object-cover" />
+        <button onClick={() => setShowSettings(true)} className="w-10 h-10 rounded-full overflow-hidden border border-white/10 press-scale flex-shrink-0 bg-brand-500/20">
+          <img 
+            src={user?.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName)}&background=38d1b0&color=050505&bold=true`} 
+            alt="Profile" 
+            referrerPolicy="no-referrer"
+            onError={(e) => {
+              e.currentTarget.onerror = null;
+              e.currentTarget.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(firstName)}&background=38d1b0&color=050505&bold=true`;
+            }}
+            className="w-full h-full object-cover" 
+          />
         </button>
       </div>
 
