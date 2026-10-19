@@ -35,22 +35,9 @@ jobs:
           distribution: 'temurin'
           cache: gradle
 
-      - name: Cache Debug Keystore
-        id: cache-keystore
-        uses: actions/cache@v3
-        with:
-          path: ~/.android/debug.keystore
-          key: ${{ runner.os }}-android-debug-keystore-v1
-
-      - name: Generate Debug Keystore
-        if: steps.cache-keystore.outputs.cache-hit != 'true'
-        run: |
-          mkdir -p ~/.android
-          keytool -genkey -v -keystore ~/.android/debug.keystore -alias androiddebugkey -keyalg RSA -keysize 2048 -validity 10000 -storepass android -keypass android -dname "CN=Android Debug,O=Android,C=US"
-
       - name: Print SHA-1 Fingerprint
         run: |
-          keytool -list -v -keystore ~/.android/debug.keystore -alias androiddebugkey -storepass android -keypass android || true
+          keytool -list -v -keystore android/app/debug.keystore -alias androiddebugkey -storepass android -keypass android || true
 
       - name: Build Debug APK
         run: |
