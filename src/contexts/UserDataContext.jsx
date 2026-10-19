@@ -41,6 +41,11 @@ export function UserDataProvider({ children }) {
       return
     }
 
+    const localOnboarded = localStorage.getItem(`has_completed_onboarding_${user.uid}`) === 'true'
+    if (localOnboarded) {
+      setHasOnboarded(true)
+    }
+
     const loadData = async () => {
       try {
         // Load main user doc
@@ -50,11 +55,22 @@ export function UserDataProvider({ children }) {
           const data = userSnap.data()
           setLikedSongIds(data.likedSongIds || [])
           setFollowedArtists(data.followedArtists || [])
-          setHasOnboarded(data.hasOnboarded || false)
+          const onboardedState = data.hasOnboarded || localOnboarded || false
+          setHasOnboarded(onboardedState)
+          if (onboardedState) {
+            localStorage.setItem(`has_completed_onboarding_${user.uid}`, 'true')
+          }
         } else {
           // Create the user doc if it doesn't exist
-          await setDoc(userRef, { likedSongIds: [], followedArtists: [], hasOnboarded: false })
-          setHasOnboarded(false)
+          await setDoc(userRef, { 
+            likedSongIds: [], 
+            followedArtists: [], 
+            hasOnboarded: localOnboarded || false,
+            email: user.email || '',
+            displayName: user.displayName || '',
+            photoURL: user.photoURL || ''
+          }, { merge: true })
+          setHasOnboarded(localOnboarded || false)
         }
 
         // Load playlists
@@ -99,6 +115,7 @@ export function UserDataProvider({ children }) {
   const completeOnboarding = useCallback(async () => {
     if (!user) return
     setHasOnboarded(true)
+    localStorage.setItem(`has_completed_onboarding_${user.uid}`, 'true')
     try {
       await setDoc(doc(db, 'users', user.uid), { hasOnboarded: true }, { merge: true })
     } catch (e) { console.error('Error setting onboarded state:', e) }
