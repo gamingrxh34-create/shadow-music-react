@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom'
 import { motion, AnimatePresence } from 'framer-motion'
 import { useUserData } from '../contexts/UserDataContext'
 import { useMusicData } from '../contexts/MusicDataContext'
-import { DEFAULT_ARTISTS } from '../data/defaultData'
 import { IoCheckmarkCircle, IoCheckmark, IoArrowBack, IoClose } from 'react-icons/io5'
 
 export default function Onboarding() {
@@ -12,10 +11,9 @@ export default function Onboarding() {
   const { artists: allArtists } = useMusicData()
   const [isFinishing, setIsFinishing] = useState(false)
 
-  // Use Firestore artists if available, otherwise guarantee default artists are always shown!
+  // Use pure Firestore artists taken from database
   const artistList = useMemo(() => {
-    const pool = (allArtists && Object.keys(allArtists).length > 0) ? allArtists : DEFAULT_ARTISTS
-    return Object.entries(pool).map(([name, data]) => ({
+    return Object.entries(allArtists || {}).map(([name, data]) => ({
       name,
       ...data
     }))

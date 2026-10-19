@@ -1,6 +1,7 @@
 import { usePlayer } from '../contexts/PlayerContext'
 import { useUserData } from '../contexts/UserDataContext'
 import { useMusicData } from '../contexts/MusicDataContext'
+import { useDownload } from '../contexts/DownloadContext'
 import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { FastAverageColor } from 'fast-average-color'
@@ -9,7 +10,8 @@ import QueueSheet from './QueueSheet'
 import {
   IoChevronDown, IoPlay, IoPause,
   IoPlaySkipBack, IoPlaySkipForward,
-  IoShuffle, IoRepeat, IoStar, IoStarOutline, IoList
+  IoShuffle, IoRepeat, IoStar, IoStarOutline, IoList,
+  IoDownloadOutline, IoCheckmarkCircle
 } from 'react-icons/io5'
 
 function NowPlaying({ onClose }) {
@@ -19,6 +21,7 @@ function NowPlaying({ onClose }) {
     shuffle, repeat, toggleShuffle, toggleRepeat
   } = usePlayer()
   const { isSongLiked, toggleLikeSong } = useUserData()
+  const { downloadedSongs, isDownloading, downloadSong, removeDownload } = useDownload()
   const { artists: allArtists, loading: musicDataLoading } = useMusicData()
   const [isClosing, setIsClosing] = useState(false)
   const [isQueueOpen, setIsQueueOpen] = useState(false)
@@ -59,6 +62,8 @@ function NowPlaying({ onClose }) {
   if (!currentTrack) return null
 
   const liked = isSongLiked(currentTrack.id)
+  const isDownloaded = !!downloadedSongs[currentTrack.id]
+  const downloading = isDownloading(currentTrack.id)
 
   const formatTime = (sec) => {
     if (!sec || isNaN(sec)) return '0:00'
@@ -151,12 +156,28 @@ function NowPlaying({ onClose }) {
                 <h2 className="text-xl font-bold text-white truncate">{currentTrack.title}</h2>
                 <p className="text-sm text-white/60 mt-1">{currentTrack.artist}</p>
               </div>
-              <button 
-                onClick={() => toggleLikeSong(currentTrack.id)}
-                className={`text-2xl press-scale mt-1 ${liked ? 'text-brand-300' : 'text-white/40'}`}
-              >
-                {liked ? <IoStar /> : <IoStarOutline />}
-              </button>
+              <div className="flex items-center gap-3 mt-1">
+                <button
+                  onClick={() => isDownloaded ? removeDownload(currentTrack.id) : downloadSong(currentTrack)}
+                  disabled={downloading}
+                  className="text-2xl press-scale p-1 text-white/50 hover:text-white"
+                  title={isDownloaded ? "Downloaded (tap to remove)" : "Download for offline"}
+                >
+                  {isDownloaded ? (
+                    <IoCheckmarkCircle className="text-brand-300" />
+                  ) : downloading ? (
+                    <div className="w-5 h-5 border-2 border-brand-300 border-t-transparent rounded-full animate-spin" />
+                  ) : (
+                    <IoDownloadOutline className="hover:text-brand-300 transition-colors" />
+                  )}
+                </button>
+                <button 
+                  onClick={() => toggleLikeSong(currentTrack.id)}
+                  className={`text-2xl press-scale p-1 ${liked ? 'text-brand-300' : 'text-white/40'}`}
+                >
+                  {liked ? <IoStar /> : <IoStarOutline />}
+                </button>
+              </div>
             </div>
 
             {/* Progress Bar */}

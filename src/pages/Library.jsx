@@ -211,7 +211,8 @@ function Library() {
       {activeFilter === 'Downloads' && (() => {
         const downloadedCustomPlaylists = playlists.filter(p => p.songIds.some(id => downloadedSongs[id]))
         const hasDownloadedLikedSongs = likedSongIds.some(id => downloadedSongs[id])
-        const hasAnyDownloads = Object.keys(downloadedSongs).length > 0
+        const downloadedSongList = Object.values(downloadedSongs).filter(Boolean)
+        const hasAnyDownloads = downloadedSongList.length > 0
         const downloadedLikedCount = likedSongIds.filter(id => downloadedSongs[id]).length
 
         return (
@@ -226,7 +227,7 @@ function Library() {
                   <IoAdd className="text-white/15 text-3xl transform rotate-180" />
                 </div>
                 <div className="text-white/30 text-lg font-medium">No downloads yet</div>
-                <div className="text-white/20 text-sm mt-2 mb-6">Download playlists to listen offline</div>
+                <div className="text-white/20 text-sm mt-2 mb-6">Download songs or playlists to listen offline</div>
                 <button 
                   onClick={() => { setActiveFilter('Playlists') }}
                   className="px-6 py-2 rounded-full bg-white/10 text-white font-semibold press-scale hover:bg-white/20 transition-colors"
@@ -235,48 +236,62 @@ function Library() {
                 </button>
               </motion.div>
             ) : (
-              <div className="flex flex-col">
-                {hasDownloadedLikedSongs && (
-                  <div
-                    onClick={() => navigate('/playlist/liked')}
-                    className="flex items-center gap-3 py-3 cursor-pointer hover:bg-white/5 active:bg-white/[0.08] rounded-lg px-2 transition-colors"
-                  >
-                    <div className="w-14 h-14 rounded-md bg-gradient-to-br from-brand-300/80 to-brand-700 flex items-center justify-center flex-shrink-0">
-                      <IoHeart className="text-white text-2xl" />
-                    </div>
-                    <div>
-                      <div className="text-base font-semibold text-white">Liked Songs</div>
-                      <div className="text-sm font-semibold text-brand-300">
-                        {downloadedLikedCount === likedSongIds.length ? 'Fully Downloaded' : `${downloadedLikedCount} of ${likedSongIds.length} downloaded`}
+              <div className="flex flex-col gap-4">
+                {/* Downloaded Playlists */}
+                {(hasDownloadedLikedSongs || downloadedCustomPlaylists.length > 0) && (
+                  <div className="flex flex-col">
+                    <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider mb-2 px-2">Offline Playlists</h3>
+                    {hasDownloadedLikedSongs && (
+                      <div
+                        onClick={() => navigate('/playlist/liked')}
+                        className="flex items-center gap-3 py-3 cursor-pointer hover:bg-white/5 active:bg-white/[0.08] rounded-lg px-2 transition-colors"
+                      >
+                        <div className="w-14 h-14 rounded-md bg-gradient-to-br from-brand-300/80 to-brand-700 flex items-center justify-center flex-shrink-0">
+                          <IoHeart className="text-white text-2xl" />
+                        </div>
+                        <div>
+                          <div className="text-base font-semibold text-white">Liked Songs</div>
+                          <div className="text-sm font-semibold text-brand-300">
+                            {downloadedLikedCount === likedSongIds.length ? 'Fully Downloaded' : `${downloadedLikedCount} of ${likedSongIds.length} downloaded`}
+                          </div>
+                        </div>
                       </div>
-                    </div>
+                    )}
+                    
+                    {downloadedCustomPlaylists.map(playlist => {
+                      const downloadedCount = playlist.songIds.filter(id => downloadedSongs[id]).length
+                      return (
+                        <div
+                          key={playlist.id}
+                          onClick={() => navigate(`/playlist/${playlist.id}`)}
+                          className="flex items-center gap-3 py-3 cursor-pointer hover:bg-white/5 active:bg-white/[0.08] rounded-lg px-2 transition-colors"
+                        >
+                          {getPlaylistCover(playlist) ? (
+                            <img src={getPlaylistCover(playlist)} alt="" className="w-14 h-14 rounded-md object-cover" />
+                          ) : (
+                            <div className="w-14 h-14 rounded-md bg-white/[0.08] flex items-center justify-center">
+                              <IoMusicalNotes className="text-white/40 text-xl" />
+                            </div>
+                          )}
+                          <div>
+                            <div className="text-base font-semibold text-white">{playlist.name}</div>
+                            <div className="text-sm font-semibold text-brand-300">
+                              {downloadedCount === playlist.songIds.length ? 'Fully Downloaded' : `${downloadedCount} of ${playlist.songIds.length} downloaded`}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
                   </div>
                 )}
-                
-                {downloadedCustomPlaylists.map(playlist => {
-                  const downloadedCount = playlist.songIds.filter(id => downloadedSongs[id]).length
-                  return (
-                    <div
-                      key={playlist.id}
-                      onClick={() => navigate(`/playlist/${playlist.id}`)}
-                      className="flex items-center gap-3 py-3 cursor-pointer hover:bg-white/5 active:bg-white/[0.08] rounded-lg px-2 transition-colors"
-                    >
-                      {getPlaylistCover(playlist) ? (
-                        <img src={getPlaylistCover(playlist)} alt="" className="w-14 h-14 rounded-md object-cover" />
-                      ) : (
-                        <div className="w-14 h-14 rounded-md bg-white/[0.08] flex items-center justify-center">
-                          <IoMusicalNotes className="text-white/40 text-xl" />
-                        </div>
-                      )}
-                      <div>
-                        <div className="text-base font-semibold text-white">{playlist.name}</div>
-                        <div className="text-sm font-semibold text-brand-300">
-                          {downloadedCount === playlist.songIds.length ? 'Fully Downloaded' : `${downloadedCount} of ${playlist.songIds.length} downloaded`}
-                        </div>
-                      </div>
-                    </div>
-                  )
-                })}
+
+                {/* All Downloaded Songs */}
+                <div className="flex flex-col">
+                  <h3 className="text-xs font-bold text-white/40 uppercase tracking-wider mb-2 px-2">Downloaded Songs ({downloadedSongList.length})</h3>
+                  {downloadedSongList.map((track, i) => (
+                    <TrackRow key={track.id} track={track} index={i} allTracks={downloadedSongList} />
+                  ))}
+                </div>
               </div>
             )}
           </div>

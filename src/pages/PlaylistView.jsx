@@ -19,15 +19,17 @@ export default function PlaylistView() {
 
   let title, playlistSongs, isLiked, playlist
 
+  const getSongById = (sid) => allSongs.find(s => s.id === sid) || downloadedSongs[sid]
+
   if (id === 'liked') {
     title = 'Liked Songs'
-    playlistSongs = allSongs.filter(s => likedSongIds.includes(s.id))
+    playlistSongs = likedSongIds.map(getSongById).filter(Boolean)
     isLiked = true
   } else {
     playlist = playlists.find(p => p.id === id)
     title = playlist?.name || 'Playlist'
     const songIds = playlist?.songIds || []
-    playlistSongs = songIds.map(sid => allSongs.find(s => s.id === sid)).filter(Boolean)
+    playlistSongs = songIds.map(getSongById).filter(Boolean)
     isLiked = false
   }
 

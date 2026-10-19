@@ -44,9 +44,14 @@ export function DownloadProvider({ children }) {
   const getFilePath = (trackId) => `shadow_music_${trackId}.mp3`
 
   const downloadSong = useCallback(async (track) => {
+    if (!track || !track.audioUrl) {
+      showToast("Cannot download: missing audio URL")
+      return
+    }
     if (downloadedSongs[track.id]) return // Already downloaded
 
     setIsDownloading(prev => ({ ...prev, [track.id]: true }))
+    showToast(`Downloading "${track.title}"...`)
     
     try {
       const fileName = getFilePath(track.id)
@@ -64,16 +69,29 @@ export function DownloadProvider({ children }) {
         path: fileName
       })
 
-      setDownloadedSongs(prev => ({
-        ...prev,
-        [track.id]: { localUri: uriResult.uri }
-      }))
+      const trackData = {
+        id: track.id,
+        title: track.title,
+        artist: track.artist,
+        coverUrl: track.coverUrl,
+        album: track.album || '',
+        lyrics: track.lyrics || '',
+        audioUrl: track.audioUrl,
+        localUri: uriResult.uri,
+        downloadedAt: Date.now()
+      }
+
+      setDownloadedSongs(prev => {
+        const next = { ...prev, [track.id]: trackData }
+        Preferences.set({ key: 'downloadedSongs', value: JSON.stringify(next) }).catch(() => {})
+        return next
+      })
       
-      showToast("Song downloaded for offline listening")
-      setIsDownloading(prev => ({ ...prev, [track.id]: false }))
+      showToast(`Downloaded "${track.title}"`)
     } catch (e) {
       console.error('Download failed:', e)
       showToast("Failed to download song")
+    } finally {
       setIsDownloading(prev => ({ ...prev, [track.id]: false }))
     }
   }, [downloadedSongs, showToast])
@@ -103,10 +121,22 @@ export function DownloadProvider({ children }) {
           directory: Directory.Data,
           path: fileName
         })
-        setDownloadedSongs(prev => ({
-          ...prev,
-          [track.id]: { localUri: uriResult.uri }
-        }))
+        const trackData = {
+          id: track.id,
+          title: track.title,
+          artist: track.artist,
+          coverUrl: track.coverUrl,
+          album: track.album || '',
+          lyrics: track.lyrics || '',
+          audioUrl: track.audioUrl,
+          localUri: uriResult.uri,
+          downloadedAt: Date.now()
+        }
+        setDownloadedSongs(prev => {
+          const next = { ...prev, [track.id]: trackData }
+          Preferences.set({ key: 'downloadedSongs', value: JSON.stringify(next) }).catch(() => {})
+          return next
+        })
       } catch (e) {
         console.error(`Failed to download ${track.title}:`, e)
       }
@@ -129,11 +159,12 @@ export function DownloadProvider({ children }) {
       await Filesystem.deleteFile({
         path: getFilePath(trackId),
         directory: Directory.Data
-      })
+      }).catch(() => {})
       
       setDownloadedSongs(prev => {
         const next = { ...prev }
         delete next[trackId]
+        Preferences.set({ key: 'downloadedSongs', value: JSON.stringify(next) }).catch(() => {})
         return next
       })
       

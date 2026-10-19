@@ -206,24 +206,30 @@ export function PlayerProvider({ children }) {
       }
     }
     
-    const handleLoadedMetadata = () => setDuration(activeAudio.duration)
     const handleEnded = () => {
       if (repeat === 'one') {
         activeAudio.currentTime = 0
-        activeAudio.play()
+        activeAudio.play().catch(() => setIsPlaying(false))
       } else {
         next()
       }
     }
 
+    const handleError = (e) => {
+      console.warn('Audio playback error (offline or unreachable source):', e)
+      setIsPlaying(false)
+    }
+
     activeAudio.addEventListener('timeupdate', handleTimeUpdate)
     activeAudio.addEventListener('loadedmetadata', handleLoadedMetadata)
     activeAudio.addEventListener('ended', handleEnded)
+    activeAudio.addEventListener('error', handleError)
 
     return () => {
       activeAudio.removeEventListener('timeupdate', handleTimeUpdate)
       activeAudio.removeEventListener('loadedmetadata', handleLoadedMetadata)
       activeAudio.removeEventListener('ended', handleEnded)
+      activeAudio.removeEventListener('error', handleError)
     }
   }, [activeAudioIndex, getNextTrackInfo, repeat, queue, allTracks])
   
@@ -253,7 +259,10 @@ export function PlayerProvider({ children }) {
     setCurrentTrack(track)
     const activeAudio = getActiveAudio()
     activeAudio.src = getTrackSrc(track)
-    activeAudio.play().then(() => setIsPlaying(true)).catch(console.error)
+    activeAudio.play().then(() => setIsPlaying(true)).catch(err => {
+      console.warn('Audio play failed:', err)
+      setIsPlaying(false)
+    })
   }, [getActiveAudio, getTrackSrc, isDownloadReady])
 
   const togglePlay = useCallback(() => {
@@ -263,7 +272,10 @@ export function PlayerProvider({ children }) {
       activeAudio.pause()
       setIsPlaying(false)
     } else {
-      activeAudio.play().then(() => setIsPlaying(true)).catch(console.error)
+      activeAudio.play().then(() => setIsPlaying(true)).catch(err => {
+        console.warn('Audio play failed:', err)
+        setIsPlaying(false)
+      })
     }
   }, [currentTrack, isPlaying, getActiveAudio, isDownloadReady])
 
@@ -284,7 +296,10 @@ export function PlayerProvider({ children }) {
       setCurrentTrack(nextInfo.track)
       const activeAudio = getActiveAudio()
       activeAudio.src = getTrackSrc(nextInfo.track)
-      activeAudio.play().then(() => setIsPlaying(true)).catch(console.error)
+      activeAudio.play().then(() => setIsPlaying(true)).catch(err => {
+        console.warn('Audio play failed:', err)
+        setIsPlaying(false)
+      })
     }
   }, [queue, getNextTrackInfo, repeat, getActiveAudio, allTracks, getTrackSrc, isDownloadReady])
 
@@ -305,7 +320,10 @@ export function PlayerProvider({ children }) {
     const prevTrack = queue[prevIndex]
     setCurrentTrack(prevTrack)
     activeAudio.src = getTrackSrc(prevTrack)
-    activeAudio.play().then(() => setIsPlaying(true)).catch(console.error)
+    activeAudio.play().then(() => setIsPlaying(true)).catch(err => {
+      console.warn('Audio play failed:', err)
+      setIsPlaying(false)
+    })
   }, [queue, currentIndex, repeat, getActiveAudio, getTrackSrc, isDownloadReady])
 
   const seek = useCallback((time) => {

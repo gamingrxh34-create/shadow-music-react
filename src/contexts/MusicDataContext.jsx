@@ -2,7 +2,6 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import { db } from '../firebase/config'
 import { collection, onSnapshot } from 'firebase/firestore'
 import { Preferences } from '@capacitor/preferences'
-import { DEFAULT_ARTISTS, DEFAULT_SONGS } from '../data/defaultData'
 
 const MusicDataContext = createContext()
 
@@ -11,8 +10,8 @@ export function useMusicData() {
 }
 
 export function MusicDataProvider({ children }) {
-  const [songs, setSongs] = useState(DEFAULT_SONGS)
-  const [artists, setArtists] = useState(DEFAULT_ARTISTS)
+  const [songs, setSongs] = useState([])
+  const [artists, setArtists] = useState({})
   const [loading, setLoading] = useState(true)
 
   useEffect(() => {

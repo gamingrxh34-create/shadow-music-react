@@ -175,6 +175,36 @@ function TrackRow({ track, index, allTracks, playlistId, draggableProvided, drag
           </button>
 
           <button 
+            onClick={() => { 
+              if (isDownloaded) {
+                removeDownload(track.id);
+              } else {
+                downloadSong(track);
+              }
+              setSheetType(null); 
+            }}
+            disabled={downloading}
+            className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors w-full"
+          >
+            {isDownloaded ? (
+              <>
+                <IoCheckmarkCircle className="text-xl text-brand-300" />
+                <span className="text-brand-300 font-medium">Remove from Downloads</span>
+              </>
+            ) : downloading ? (
+              <>
+                <div className="w-5 h-5 border-2 border-brand-300 border-t-transparent rounded-full animate-spin" />
+                <span className="text-white/60">Downloading...</span>
+              </>
+            ) : (
+              <>
+                <IoDownloadOutline className="text-xl text-white/70" />
+                <span className="text-white">Download for Offline</span>
+              </>
+            )}
+          </button>
+
+          <button 
             onClick={() => { addToQueue && addToQueue(track); setSheetType(null); }}
             className="flex items-center gap-4 p-3 rounded-lg hover:bg-white/5 transition-colors w-full"
           >
