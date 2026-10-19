@@ -21,10 +21,10 @@ function Library() {
   const [newPlaylistName, setNewPlaylistName] = useState('')
   const { songs, artists, loading } = useMusicData()
 
-  const followedArtistData = followedArtists.map(name => ({
+  const followedArtistData = (followedArtists || []).map(name => ({
     name,
-    image: artists[name]?.image || '',
-    bio: artists[name]?.bio || ''
+    image: artists?.[name]?.image || '',
+    bio: artists?.[name]?.bio || ''
   }))
 
   const handleCreatePlaylist = async () => {
@@ -36,8 +36,8 @@ function Library() {
 
   // Find cover URL for a playlist (use first song's cover)
   const getPlaylistCover = (playlist) => {
-    if (playlist.songIds.length === 0) return null
-    const firstSong = songs.find(s => s.id === playlist.songIds[0])
+    if (!playlist?.songIds || playlist.songIds.length === 0) return null
+    const firstSong = (songs || []).find(s => s.id === playlist.songIds[0])
     return firstSong?.coverUrl || null
   }
 

@@ -25,20 +25,20 @@ function Search() {
   const q = query.trim().toLowerCase()
 
   const filteredArtists = q
-    ? Object.entries(artists).filter(([name]) => name.toLowerCase().includes(q)).map(([name, data]) => ({ name, ...data }))
+    ? Object.entries(artists || {}).filter(([name]) => (name || '').toLowerCase().includes(q)).map(([name, data]) => ({ name, ...data }))
     : []
 
   const filtered = q
-    ? songs.filter(s =>
-        s.title.toLowerCase().includes(q) ||
-        s.artist.toLowerCase().includes(q) ||
-        s.album.toLowerCase().includes(q)
+    ? (songs || []).filter(s =>
+        (s.title || '').toLowerCase().includes(q) ||
+        (s.artist || '').toLowerCase().includes(q) ||
+        (s.album || '').toLowerCase().includes(q)
       )
     : []
 
   const moodFiltered = activeMood
-    ? songs.filter(s => {
-        const searchText = `${s.title} ${s.artist} ${s.album} ${s.genre || ''}`.toLowerCase()
+    ? (songs || []).filter(s => {
+        const searchText = `${s.title || ''} ${s.artist || ''} ${s.album || ''} ${s.genre || ''}`.toLowerCase()
         return activeMood.keywords.some(kw => searchText.includes(kw))
       })
     : []

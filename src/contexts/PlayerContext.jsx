@@ -113,11 +113,12 @@ export function PlayerProvider({ children }) {
 
   // Helper to get local or remote src
   const getTrackSrc = useCallback((track) => {
-    const downloaded = downloadedSongs[track.id]
+    if (!track?.id) return ''
+    const downloaded = downloadedSongs?.[track.id]
     if (downloaded && downloaded.localUri) {
       return Capacitor.convertFileSrc(downloaded.localUri)
     }
-    return track.audioUrl
+    return track.audioUrl || ''
   }, [downloadedSongs])
 
   // Next Track Logic

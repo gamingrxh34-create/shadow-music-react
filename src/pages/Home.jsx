@@ -26,12 +26,12 @@ function Home() {
 
   const firstName = user?.displayName?.split(' ')[0] || 'User'
   
-  const recentSongs = (recentHistory || []).slice(0, 6)
+  const recentSongs = (recentHistory || []).filter(Boolean).slice(0, 6)
 
-  const madeForYou = allSongs.length > 12 ? allSongs.slice(0, 20) : allSongs
-  const artistList = Object.entries(allArtists).map(([name, data]) => ({
+  const madeForYou = allSongs && allSongs.length > 12 ? allSongs.slice(0, 20) : (allSongs || [])
+  const artistList = Object.entries(allArtists || {}).map(([name, data]) => ({
     name,
-    image: data.image,
+    image: data?.image || '',
     subtitle: 'Artist'
   }))
 
@@ -57,12 +57,12 @@ function Home() {
       </div>
 
       {/* Hero Banner (Featured) */}
-      {allSongs.length > 0 && (
+      {allSongs && allSongs.length > 0 && allSongs[0] && (
         <div className="relative h-56 rounded-2xl overflow-hidden mb-8 shadow-xl press-scale cursor-pointer group" onClick={() => play(allSongs[0], allSongs)}>
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10" />
           <img 
-            src={allSongs[0].coverUrl} 
-            alt={allSongs[0].title}
+            src={allSongs[0].coverUrl || 'https://via.placeholder.com/300'} 
+            alt={allSongs[0].title || ''}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
           <div className="absolute inset-0 p-5 flex flex-col justify-end z-20">

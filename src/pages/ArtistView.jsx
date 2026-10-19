@@ -20,9 +20,9 @@ export default function ArtistView() {
 
   useEffect(() => {
     if (musicDataLoading) return
-    const found = Object.entries(allArtists).find(([name]) => name.toLowerCase() === artistName.toLowerCase())
+    const found = Object.entries(allArtists || {}).find(([name]) => (name || '').toLowerCase() === artistName.toLowerCase())
     if (found) setArtist({ name: found[0], ...found[1] })
-    setSongs(allSongs.filter(s => s.artist.toLowerCase() === artistName.toLowerCase()))
+    setSongs((allSongs || []).filter(s => (s.artist || '').toLowerCase() === artistName.toLowerCase()))
   }, [artistName, allSongs, allArtists, musicDataLoading])
 
   if (!artist) return (

@@ -1,6 +1,6 @@
 import { initializeApp } from 'firebase/app'
 import { getAuth, GoogleAuthProvider } from 'firebase/auth'
-import { initializeFirestore, persistentLocalCache, persistentMultipleTabManager } from 'firebase/firestore'
+import { getFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
 const firebaseConfig = {
@@ -15,25 +15,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig)
 export const auth = getAuth(app)
 export const googleProvider = new GoogleAuthProvider()
-// Enable offline persistence so app works without internet
-let firestoreDb
-try {
-  firestoreDb = initializeFirestore(app, {
-    localCache: persistentLocalCache({
-      tabManager: persistentMultipleTabManager()
-    })
-  })
-} catch (e) {
-  console.warn('Persistent multiple tab manager fallback:', e)
-  try {
-    firestoreDb = initializeFirestore(app, {
-      localCache: persistentLocalCache()
-    })
-  } catch (err) {
-    firestoreDb = getFirestore(app)
-  }
-}
-
-export const db = firestoreDb
+export const db = getFirestore(app)
 export const storage = getStorage(app)
 export default app
