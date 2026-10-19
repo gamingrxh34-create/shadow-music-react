@@ -19,7 +19,7 @@ export default function PlaylistView() {
 
   let title, playlistSongs, isLiked, playlist
 
-  const getSongById = (sid) => allSongs.find(s => s.id === sid) || downloadedSongs[sid]
+  const getSongById = (sid) => (allSongs || []).find(s => s.id === sid) || downloadedSongs?.[sid]
 
   if (id === 'liked') {
     title = 'Liked Songs'

@@ -42,35 +42,50 @@ export function UserDataProvider({ children }) {
       return
     }
 
-    const localOnboarded = localStorage.getItem(`has_completed_onboarding_${user.uid}`) === 'true'
-    if (localOnboarded) {
-      setHasOnboarded(true)
-    }
-
     const loadData = async () => {
-      // 1. Immediately load cached data from native storage (Preferences) so user NEVER sees empty state
+      // 1. Immediately load cached data from native storage (Preferences + localStorage) so user NEVER sees empty state
       let localLikes = []
       let localFollows = []
       let localPlaylists = []
 
       try {
-        const [likesRes, followsRes, playlistsRes] = await Promise.all([
+        const [likesRes, followsRes, playlistsRes, onboardedRes, globalOnboardedRes] = await Promise.all([
           Preferences.get({ key: `user_likes_${user.uid}` }),
           Preferences.get({ key: `user_follows_${user.uid}` }),
-          Preferences.get({ key: `user_playlists_${user.uid}` })
+          Preferences.get({ key: `user_playlists_${user.uid}` }),
+          Preferences.get({ key: `has_completed_onboarding_${user.uid}` }),
+          Preferences.get({ key: 'has_completed_onboarding_global' })
         ])
 
         if (likesRes.value) {
           localLikes = JSON.parse(likesRes.value) || []
-          setLikedSongIds(localLikes)
+        } else {
+          try { localLikes = JSON.parse(localStorage.getItem(`user_likes_${user.uid}`)) || [] } catch {}
         }
+        setLikedSongIds(localLikes)
+
         if (followsRes.value) {
           localFollows = JSON.parse(followsRes.value) || []
-          setFollowedArtists(localFollows)
+        } else {
+          try { localFollows = JSON.parse(localStorage.getItem(`user_follows_${user.uid}`)) || [] } catch {}
         }
+        setFollowedArtists(localFollows)
+
         if (playlistsRes.value) {
           localPlaylists = JSON.parse(playlistsRes.value) || []
-          setPlaylists(localPlaylists)
+        } else {
+          try { localPlaylists = JSON.parse(localStorage.getItem(`user_playlists_${user.uid}`)) || [] } catch {}
+        }
+        setPlaylists(localPlaylists)
+
+        const isOnboarded = 
+          onboardedRes.value === 'true' || 
+          globalOnboardedRes.value === 'true' || 
+          localStorage.getItem(`has_completed_onboarding_${user.uid}`) === 'true' ||
+          localStorage.getItem('has_completed_onboarding_global') === 'true'
+
+        if (isOnboarded) {
+          setHasOnboarded(true)
         }
       } catch (err) {
         console.warn('Error reading local user cache:', err)
@@ -97,10 +112,12 @@ export function UserDataProvider({ children }) {
           await Preferences.set({ key: `user_likes_${user.uid}`, value: JSON.stringify(mergedLikes) })
           await Preferences.set({ key: `user_follows_${user.uid}`, value: JSON.stringify(mergedFollows) })
 
-          const onboardedState = data.hasOnboarded || localOnboarded || false
-          setHasOnboarded(onboardedState)
-          if (onboardedState) {
+          if (data.hasOnboarded) {
+            setHasOnboarded(true)
             localStorage.setItem(`has_completed_onboarding_${user.uid}`, 'true')
+            localStorage.setItem('has_completed_onboarding_global', 'true')
+            Preferences.set({ key: `has_completed_onboarding_${user.uid}`, value: 'true' }).catch(() => {})
+            Preferences.set({ key: 'has_completed_onboarding_global', value: 'true' }).catch(() => {})
           }
 
           // If local had extra items, sync back to Firestore
@@ -112,12 +129,11 @@ export function UserDataProvider({ children }) {
           await setDoc(userRef, { 
             likedSongIds: localLikes, 
             followedArtists: localFollows, 
-            hasOnboarded: localOnboarded || false,
+            hasOnboarded: true,
             email: user.email || '',
             displayName: user.displayName || '',
             photoURL: user.photoURL || ''
           }, { merge: true })
-          setHasOnboarded(localOnboarded || false)
         }
 
         // Fetch Playlists from Firestore and merge with local playlists
@@ -163,6 +179,7 @@ export function UserDataProvider({ children }) {
 
     // 2. Persist to native storage immediately so it NEVER gets removed on restart
     await Preferences.set({ key: `user_likes_${user.uid}`, value: JSON.stringify(updated) })
+    localStorage.setItem(`user_likes_${user.uid}`, JSON.stringify(updated))
 
     // 3. Sync to Firestore in background
     try {
@@ -180,6 +197,9 @@ export function UserDataProvider({ children }) {
     if (!user) return
     setHasOnboarded(true)
     localStorage.setItem(`has_completed_onboarding_${user.uid}`, 'true')
+    localStorage.setItem('has_completed_onboarding_global', 'true')
+    await Preferences.set({ key: `has_completed_onboarding_${user.uid}`, value: 'true' })
+    await Preferences.set({ key: 'has_completed_onboarding_global', value: 'true' })
     try {
       await setDoc(doc(db, 'users', user.uid), { hasOnboarded: true }, { merge: true })
     } catch (e) { console.warn('Error setting onboarded state:', e) }
@@ -195,6 +215,7 @@ export function UserDataProvider({ children }) {
 
     setFollowedArtists(updated)
     await Preferences.set({ key: `user_follows_${user.uid}`, value: JSON.stringify(updated) })
+    localStorage.setItem(`user_follows_${user.uid}`, JSON.stringify(updated))
 
     try {
       await setDoc(doc(db, 'users', user.uid), { followedArtists: updated }, { merge: true })
@@ -220,6 +241,7 @@ export function UserDataProvider({ children }) {
     setPlaylists(prev => {
       const updated = [...prev, playlistData]
       Preferences.set({ key: `user_playlists_${user.uid}`, value: JSON.stringify(updated) }).catch(() => {})
+      localStorage.setItem(`user_playlists_${user.uid}`, JSON.stringify(updated))
       return updated
     })
 
@@ -240,6 +262,7 @@ export function UserDataProvider({ children }) {
     setPlaylists(prev => {
       const updated = prev.filter(p => p.id !== playlistId)
       Preferences.set({ key: `user_playlists_${user.uid}`, value: JSON.stringify(updated) }).catch(() => {})
+      localStorage.setItem(`user_playlists_${user.uid}`, JSON.stringify(updated))
       return updated
     })
     showToast('Playlist deleted')
@@ -258,6 +281,7 @@ export function UserDataProvider({ children }) {
       if (target.songIds.includes(songId)) return prev
       const updated = prev.map(p => p.id === playlistId ? { ...p, songIds: [...p.songIds, songId] } : p)
       Preferences.set({ key: `user_playlists_${user.uid}`, value: JSON.stringify(updated) }).catch(() => {})
+      localStorage.setItem(`user_playlists_${user.uid}`, JSON.stringify(updated))
       return updated
     })
 
@@ -278,6 +302,7 @@ export function UserDataProvider({ children }) {
     setPlaylists(prev => {
       const updated = prev.map(p => p.id === playlistId ? { ...p, songIds: p.songIds.filter(id => id !== trackId) } : p)
       Preferences.set({ key: `user_playlists_${user.uid}`, value: JSON.stringify(updated) }).catch(() => {})
+      localStorage.setItem(`user_playlists_${user.uid}`, JSON.stringify(updated))
       return updated
     })
     showToast("Song removed")

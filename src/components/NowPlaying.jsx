@@ -51,7 +51,7 @@ function NowPlaying({ onClose }) {
 
   useEffect(() => {
     if (currentTrack && !musicDataLoading) {
-      if (allArtists[currentTrack.artist]) {
+      if (allArtists && allArtists[currentTrack.artist]) {
         setArtistData({ name: currentTrack.artist, ...allArtists[currentTrack.artist] })
       } else {
         setArtistData(null)
@@ -61,9 +61,9 @@ function NowPlaying({ onClose }) {
 
   if (!currentTrack) return null
 
-  const liked = isSongLiked(currentTrack.id)
-  const isDownloaded = !!downloadedSongs[currentTrack.id]
-  const downloading = isDownloading(currentTrack.id)
+  const liked = isSongLiked ? isSongLiked(currentTrack.id) : false
+  const isDownloaded = !!(downloadedSongs && downloadedSongs[currentTrack.id])
+  const downloading = !!(isDownloading && isDownloading[currentTrack.id])
 
   const formatTime = (sec) => {
     if (!sec || isNaN(sec)) return '0:00'
