@@ -207,6 +207,7 @@ export function PlayerProvider({ children }) {
       }
     }
     
+    const handleLoadedMetadata = () => setDuration(activeAudio.duration)
     const handleEnded = () => {
       if (repeat === 'one') {
         activeAudio.currentTime = 0
