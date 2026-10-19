@@ -80,17 +80,19 @@ function NowPlaying({ onClose }) {
         initial={{ y: '100%' }}
         animate={{ y: 0 }}
         exit={{ y: '100%' }}
-        transition={{ type: 'spring', bounce: 0, duration: 0.4 }}
+        transition={{ type: 'spring', damping: 28, stiffness: 260 }}
         drag="y"
-        dragConstraints={{ top: 0 }}
-        dragElastic={0.2}
+        dragDirectionLock
+        dragConstraints={{ top: 0, bottom: 0 }}
+        dragElastic={{ top: 0, bottom: 0.65 }}
+        dragSnapToOrigin={true}
         onDragEnd={(e, { offset, velocity }) => {
-          if (offset.y > 100 || velocity.y > 500) {
+          if (offset.y > 60 || velocity.y > 350) {
             Haptics.impact({ style: ImpactStyle.Light }).catch(() => {})
             handleClose();
           }
         }}
-        className="fixed inset-0 z-[100] flex flex-col bg-[#050505]"
+        className="fixed inset-0 z-[100] flex flex-col bg-[#050505] select-none"
       >
         {/* Background - static gradient based on dominant color, NO heavy blur */}
         <div 
@@ -100,18 +102,27 @@ function NowPlaying({ onClose }) {
           }}
         />
 
+        {/* Grab Handle pill for intuitive swipe-down */}
+        <div 
+          className="relative z-20 w-full pt-3 pb-1 flex justify-center items-center flex-shrink-0 cursor-grab active:cursor-grabbing"
+          style={{ paddingTop: 'max(12px, env(safe-area-inset-top, 0px))' }}
+        >
+          <div className="w-10 h-1 rounded-full bg-white/25 active:bg-white/50 transition-colors" />
+        </div>
+
         {/* Scrollable Content */}
         <div className="relative z-10 flex flex-col h-full overflow-y-auto custom-scrollbar">
-          <div className="flex flex-col min-h-full px-7 pt-4 pb-10">
+          <div className="flex flex-col min-h-full px-7 pt-1 pb-10">
             {/* Header */}
-            <div className="flex items-center justify-between py-4 flex-shrink-0">
-              <button onClick={handleClose} className="text-white/70 text-2xl press-scale p-1">
+            <div className="flex items-center justify-between py-3 flex-shrink-0">
+              <button onClick={handleClose} className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white text-2xl press-scale rounded-full hover:bg-white/10 p-1">
                 <IoChevronDown />
               </button>
-              <div className="text-center">
+              <div className="text-center px-2 min-w-0 flex-1">
                 <div className="text-[10px] font-semibold tracking-widest text-white/50 uppercase">Now Playing</div>
+                <div className="text-xs font-semibold text-white/90 truncate">{currentTrack.title}</div>
               </div>
-              <button onClick={() => setIsQueueOpen(true)} className="text-white/70 text-2xl press-scale p-1">
+              <button onClick={() => setIsQueueOpen(true)} className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-white text-2xl press-scale rounded-full hover:bg-white/10 p-1">
                 <IoList />
               </button>
             </div>

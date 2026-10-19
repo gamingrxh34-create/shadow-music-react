@@ -38,12 +38,14 @@ function MiniPlayer({ onExpand }) {
   return (
     <motion.div 
       drag="x"
+      dragDirectionLock
       dragConstraints={{ left: 0, right: 0 }}
-      dragElastic={0.2}
-      onDragEnd={(e, { offset }) => {
-        if (offset.x > 50) {
+      dragElastic={0.25}
+      dragSnapToOrigin={true}
+      onDragEnd={(e, { offset, velocity }) => {
+        if (offset.x > 50 || velocity.x > 300) {
           prev();
-        } else if (offset.x < -50) {
+        } else if (offset.x < -50 || velocity.x < -300) {
           next();
         }
       }}
