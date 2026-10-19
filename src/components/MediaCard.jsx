@@ -1,9 +1,12 @@
 import { IoPlay } from 'react-icons/io5'
 import { usePlayer } from '../contexts/PlayerContext'
+import { useDownload } from '../contexts/DownloadContext'
 import { useNavigate } from 'react-router-dom'
+import { Capacitor } from '@capacitor/core'
 
 function MediaCard({ item, type = 'song', allTracks = [] }) {
   const { play } = usePlayer()
+  const { downloadedSongs } = useDownload()
   const navigate = useNavigate()
 
   const handleCardClick = () => {
@@ -20,6 +23,11 @@ function MediaCard({ item, type = 'song', allTracks = [] }) {
   }
 
   const isArtist = type === 'artist'
+  const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true
+  const downloaded = item?.id ? downloadedSongs?.[item.id] : null
+  const coverSrc = (!isOnline && downloaded?.localCoverUri)
+    ? Capacitor.convertFileSrc(downloaded.localCoverUri)
+    : (item.coverUrl || item.image || 'https://via.placeholder.com/200?text=♪')
 
   return (
     <div 
@@ -28,7 +36,7 @@ function MediaCard({ item, type = 'song', allTracks = [] }) {
     >
       <div className="relative">
         <img
-          src={item.coverUrl || item.image || 'https://via.placeholder.com/200?text=♪'}
+          src={coverSrc}
           alt={item.title || item.name}
           className={`w-full aspect-square object-cover bg-surface-100 ${
             isArtist ? 'rounded-full' : 'rounded-lg'

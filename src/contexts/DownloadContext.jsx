@@ -69,11 +69,32 @@ export function DownloadProvider({ children }) {
         path: fileName
       })
 
+      // Cache cover art locally so artwork works 100% offline
+      let localCoverUri = null
+      if (track.coverUrl) {
+        try {
+          const coverFileName = `shadow_music_art_${track.id}.jpg`
+          await Filesystem.downloadFile({
+            url: track.coverUrl,
+            path: coverFileName,
+            directory: Directory.Data
+          })
+          const coverUriResult = await Filesystem.getUri({
+            directory: Directory.Data,
+            path: coverFileName
+          })
+          localCoverUri = coverUriResult.uri
+        } catch (coverErr) {
+          console.warn('Cover art caching failed, audio still saved:', coverErr)
+        }
+      }
+
       const trackData = {
         id: track.id,
         title: track.title,
         artist: track.artist,
         coverUrl: track.coverUrl,
+        localCoverUri: localCoverUri,
         album: track.album || '',
         lyrics: track.lyrics || '',
         audioUrl: track.audioUrl,
@@ -121,11 +142,32 @@ export function DownloadProvider({ children }) {
           directory: Directory.Data,
           path: fileName
         })
+
+        let localCoverUri = null
+        if (track.coverUrl) {
+          try {
+            const coverFileName = `shadow_music_art_${track.id}.jpg`
+            await Filesystem.downloadFile({
+              url: track.coverUrl,
+              path: coverFileName,
+              directory: Directory.Data
+            })
+            const coverUriResult = await Filesystem.getUri({
+              directory: Directory.Data,
+              path: coverFileName
+            })
+            localCoverUri = coverUriResult.uri
+          } catch (coverErr) {
+            console.warn('Cover cache failed for playlist track:', coverErr)
+          }
+        }
+
         const trackData = {
           id: track.id,
           title: track.title,
           artist: track.artist,
           coverUrl: track.coverUrl,
+          localCoverUri: localCoverUri,
           album: track.album || '',
           lyrics: track.lyrics || '',
           audioUrl: track.audioUrl,
@@ -158,6 +200,10 @@ export function DownloadProvider({ children }) {
     try {
       await Filesystem.deleteFile({
         path: getFilePath(trackId),
+        directory: Directory.Data
+      }).catch(() => {})
+      await Filesystem.deleteFile({
+        path: `shadow_music_art_${trackId}.jpg`,
         directory: Directory.Data
       }).catch(() => {})
       

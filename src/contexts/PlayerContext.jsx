@@ -92,16 +92,37 @@ export function PlayerProvider({ children }) {
   const getActiveAudio = useCallback(() => activeAudioIndex === 1 ? audio1Ref.current : audio2Ref.current, [activeAudioIndex])
   const getSecondaryAudio = useCallback(() => activeAudioIndex === 1 ? audio2Ref.current : audio1Ref.current, [activeAudioIndex])
 
-  // Update MediaSession metadata and state
-  useEffect(() => {
-    if (Capacitor.isNativePlatform() && currentTrack) {
-      MediaSession.setMetadata({
-        title: currentTrack.title,
-        artist: currentTrack.artist,
-        artwork: [{ src: currentTrack.coverUrl, sizes: '512x512', type: 'image/jpeg' }]
-      }).catch(console.error)
+  // Update MediaSession metadata safely without crashing offline
+  const updateNativeMetadata = useCallback((track) => {
+    if (!Capacitor.isNativePlatform() || !track) return
+    const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true
+    const downloaded = downloadedSongs?.[track.id]
+    const meta = {
+      title: track.title || '',
+      artist: track.artist || '',
+      album: track.album || '',
+      artwork: []
     }
-  }, [currentTrack])
+
+    // Prefer local cached cover art, or remote HTTP if online
+    if (downloaded && downloaded.localCoverUri) {
+      meta.artwork = [{ src: downloaded.localCoverUri, sizes: '512x512', type: 'image/jpeg' }]
+    } else if (track.coverUrl && isOnline) {
+      meta.artwork = [{ src: track.coverUrl, sizes: '512x512', type: 'image/jpeg' }]
+    } else if (track.coverUrl && (track.coverUrl.startsWith('data:') || track.coverUrl.startsWith('file:'))) {
+      meta.artwork = [{ src: track.coverUrl, sizes: '512x512', type: 'image/jpeg' }]
+    }
+
+    MediaSession.setMetadata(meta).catch((err) => {
+      console.warn('Native MediaSession setMetadata handled gracefully:', err)
+    })
+  }, [downloadedSongs])
+
+  useEffect(() => {
+    if (currentTrack) {
+      updateNativeMetadata(currentTrack)
+    }
+  }, [currentTrack, updateNativeMetadata])
 
   useEffect(() => {
     if (Capacitor.isNativePlatform()) {
@@ -124,18 +145,47 @@ export function PlayerProvider({ children }) {
   // Next Track Logic
   const getNextTrackInfo = useCallback(() => {
     if (queue.length === 0) return null
-    let nextIdx
+    const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true
+
     if (shuffle) {
-      nextIdx = Math.floor(Math.random() * queue.length)
-    } else {
-      nextIdx = currentIndex + 1
-      if (nextIdx >= queue.length) {
-        if (repeat === 'all') nextIdx = 0
-        else return null // end of queue
+      if (!isOnline) {
+        const offlineIndices = queue
+          .map((t, idx) => (downloadedSongs?.[t.id] ? idx : -1))
+          .filter(idx => idx !== -1 && idx !== currentIndex)
+        if (offlineIndices.length > 0) {
+          const rand = offlineIndices[Math.floor(Math.random() * offlineIndices.length)]
+          return { track: queue[rand], index: rand }
+        }
       }
+      const nextIdx = Math.floor(Math.random() * queue.length)
+      return { track: queue[nextIdx], index: nextIdx }
+    } else {
+      let nextIdx = currentIndex + 1
+      if (!isOnline) {
+        // Skip undownloaded tracks offline
+        while (nextIdx < queue.length && !downloadedSongs?.[queue[nextIdx]?.id]) {
+          nextIdx++
+        }
+        if (nextIdx >= queue.length && repeat === 'all') {
+          nextIdx = 0
+          while (nextIdx < currentIndex && !downloadedSongs?.[queue[nextIdx]?.id]) {
+            nextIdx++
+          }
+        }
+      } else {
+        if (nextIdx >= queue.length) {
+          if (repeat === 'all') nextIdx = 0
+          else return null // end of queue
+        }
+      }
+
+      if (nextIdx < queue.length && queue[nextIdx]) {
+        if (!isOnline && !downloadedSongs?.[queue[nextIdx].id]) return null
+        return { track: queue[nextIdx], index: nextIdx }
+      }
+      return null
     }
-    return { track: queue[nextIdx], index: nextIdx }
-  }, [queue, currentIndex, shuffle, repeat])
+  }, [queue, currentIndex, shuffle, repeat, downloadedSongs])
 
   useEffect(() => {
     const activeAudio = getActiveAudio()
@@ -252,23 +302,43 @@ export function PlayerProvider({ children }) {
   }, [isDownloadReady]) // only when download ready
 
   const play = useCallback((track, trackList = null) => {
-    if (!isDownloadReady) return
+    if (!isDownloadReady || !track) return
+
+    const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true
+    const isDownloaded = !!(downloadedSongs && downloadedSongs[track.id])
+
+    if (!isOnline && !isDownloaded) {
+      showToast("Connect to the internet or play downloaded songs")
+      return
+    }
+
     if (trackList) {
       setQueue(trackList)
       const index = trackList.findIndex(t => t.id === track.id)
       setCurrentIndex(index >= 0 ? index : 0)
     }
-    setCurrentTrack(track)
+
+    const effectiveTrack = (isDownloaded && downloadedSongs[track.id]?.localCoverUri && !isOnline)
+      ? { ...track, coverUrl: Capacitor.convertFileSrc(downloadedSongs[track.id].localCoverUri) }
+      : track
+
+    setCurrentTrack(effectiveTrack)
     const activeAudio = getActiveAudio()
-    activeAudio.src = getTrackSrc(track)
+    activeAudio.src = getTrackSrc(effectiveTrack)
     activeAudio.play().then(() => setIsPlaying(true)).catch(err => {
       console.warn('Audio play failed:', err)
       setIsPlaying(false)
     })
-  }, [getActiveAudio, getTrackSrc, isDownloadReady])
+  }, [getActiveAudio, getTrackSrc, isDownloadReady, downloadedSongs, showToast])
 
   const togglePlay = useCallback(() => {
     if (!currentTrack || !isDownloadReady) return
+    const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true
+    const isDownloaded = !!(downloadedSongs && downloadedSongs[currentTrack.id])
+    if (!isOnline && !isDownloaded && !isPlaying) {
+      showToast("Connect to the internet or play downloaded songs")
+      return
+    }
     const activeAudio = getActiveAudio()
     if (isPlaying) {
       activeAudio.pause()
@@ -279,14 +349,15 @@ export function PlayerProvider({ children }) {
         setIsPlaying(false)
       })
     }
-  }, [currentTrack, isPlaying, getActiveAudio, isDownloadReady])
+  }, [currentTrack, isPlaying, getActiveAudio, isDownloadReady, downloadedSongs, showToast])
 
   const next = useCallback(() => {
     if (queue.length === 0 || !isDownloadReady) return
     let nextInfo = getNextTrackInfo()
     
     // Autoplay
-    if (!nextInfo && repeat === 'off' && allTracks.length > 0) {
+    const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true
+    if (!nextInfo && repeat === 'off' && isOnline && allTracks.length > 0) {
       const randomIdx = Math.floor(Math.random() * allTracks.length)
       const randomTrack = allTracks[randomIdx]
       setQueue(prev => [...prev, randomTrack])
@@ -294,16 +365,27 @@ export function PlayerProvider({ children }) {
     }
 
     if (nextInfo) {
+      const isDownloaded = !!(downloadedSongs && downloadedSongs[nextInfo.track.id])
+      if (!isOnline && !isDownloaded) {
+        showToast("Next song isn't downloaded for offline playback")
+        setIsPlaying(false)
+        return
+      }
+
+      const effectiveTrack = (isDownloaded && downloadedSongs[nextInfo.track.id]?.localCoverUri && !isOnline)
+        ? { ...nextInfo.track, coverUrl: Capacitor.convertFileSrc(downloadedSongs[nextInfo.track.id].localCoverUri) }
+        : nextInfo.track
+
       setCurrentIndex(nextInfo.index)
-      setCurrentTrack(nextInfo.track)
+      setCurrentTrack(effectiveTrack)
       const activeAudio = getActiveAudio()
-      activeAudio.src = getTrackSrc(nextInfo.track)
+      activeAudio.src = getTrackSrc(effectiveTrack)
       activeAudio.play().then(() => setIsPlaying(true)).catch(err => {
         console.warn('Audio play failed:', err)
         setIsPlaying(false)
       })
     }
-  }, [queue, getNextTrackInfo, repeat, getActiveAudio, allTracks, getTrackSrc, isDownloadReady])
+  }, [queue, getNextTrackInfo, repeat, getActiveAudio, allTracks, getTrackSrc, isDownloadReady, downloadedSongs, showToast])
 
   const prev = useCallback(() => {
     if (!isDownloadReady) return
@@ -313,20 +395,50 @@ export function PlayerProvider({ children }) {
       return
     }
     if (queue.length === 0) return
+    const isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true
     let prevIndex = currentIndex - 1
-    if (prevIndex < 0) {
-      if (repeat === 'all') prevIndex = queue.length - 1
-      else { activeAudio.currentTime = 0; return }
+    if (!isOnline) {
+      while (prevIndex >= 0 && !downloadedSongs?.[queue[prevIndex]?.id]) {
+        prevIndex--
+      }
     }
-    setCurrentIndex(prevIndex)
+    if (prevIndex < 0) {
+      if (repeat === 'all') {
+        prevIndex = queue.length - 1
+        if (!isOnline) {
+          while (prevIndex >= 0 && !downloadedSongs?.[queue[prevIndex]?.id]) {
+            prevIndex--
+          }
+        }
+        if (prevIndex < 0) {
+          activeAudio.currentTime = 0
+          return
+        }
+      } else {
+        activeAudio.currentTime = 0
+        return
+      }
+    }
     const prevTrack = queue[prevIndex]
-    setCurrentTrack(prevTrack)
-    activeAudio.src = getTrackSrc(prevTrack)
+    const isDownloaded = !!(downloadedSongs && downloadedSongs[prevTrack.id])
+    if (!isOnline && !isDownloaded) {
+      showToast("Previous song isn't downloaded for offline playback")
+      setIsPlaying(false)
+      return
+    }
+
+    const effectiveTrack = (isDownloaded && downloadedSongs[prevTrack.id]?.localCoverUri && !isOnline)
+      ? { ...prevTrack, coverUrl: Capacitor.convertFileSrc(downloadedSongs[prevTrack.id].localCoverUri) }
+      : prevTrack
+
+    setCurrentIndex(prevIndex)
+    setCurrentTrack(effectiveTrack)
+    activeAudio.src = getTrackSrc(effectiveTrack)
     activeAudio.play().then(() => setIsPlaying(true)).catch(err => {
       console.warn('Audio play failed:', err)
       setIsPlaying(false)
     })
-  }, [queue, currentIndex, repeat, getActiveAudio, getTrackSrc, isDownloadReady])
+  }, [queue, currentIndex, repeat, getActiveAudio, getTrackSrc, isDownloadReady, downloadedSongs, showToast])
 
   const seek = useCallback((time) => {
     const activeAudio = getActiveAudio()
@@ -369,11 +481,7 @@ export function PlayerProvider({ children }) {
       // App resumed - re-register all media session handlers defensively
       try {
         if (currentTrack) {
-          MediaSession.setMetadata({
-            title: currentTrack.title,
-            artist: currentTrack.artist,
-            artwork: [{ src: currentTrack.coverUrl, sizes: '512x512', type: 'image/jpeg' }]
-          }).catch(() => {})
+          updateNativeMetadata(currentTrack)
         }
         MediaSession.setActionHandler({ action: 'play' }, () => togglePlay())
         MediaSession.setActionHandler({ action: 'pause' }, () => togglePlay())
@@ -389,7 +497,7 @@ export function PlayerProvider({ children }) {
       handlePause.then(l => l.remove()).catch(() => {})
       handleResume.then(l => l.remove()).catch(() => {})
     }
-  }, [togglePlay, next, prev, currentTrack, getActiveAudio])
+  }, [togglePlay, next, prev, currentTrack, getActiveAudio, updateNativeMetadata])
 
   const toggleShuffle = useCallback(() => setShuffle(prev => !prev), [])
 
