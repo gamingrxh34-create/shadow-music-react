@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react'
 import { db } from '../firebase/config'
 import { collection, onSnapshot } from 'firebase/firestore'
 import { Preferences } from '@capacitor/preferences'
+import { DEFAULT_ARTISTS, DEFAULT_SONGS } from '../data/defaultData'
 
 const MusicDataContext = createContext()
 
@@ -10,9 +11,9 @@ export function useMusicData() {
 }
 
 export function MusicDataProvider({ children }) {
-  const [songs, setSongs] = useState([])
-  const [artists, setArtists] = useState({})
-  const [loading, setLoading] = useState(true)
+  const [songs, setSongs] = useState(DEFAULT_SONGS)
+  const [artists, setArtists] = useState(DEFAULT_ARTISTS)
+  const [loading, setLoading] = useState(false)
 
   useEffect(() => {
     // 1. Immediately load last cached data from Preferences for instant display
@@ -33,46 +34,48 @@ export function MusicDataProvider({ children }) {
     loadCached()
 
     // 2. Real-time live listeners directly from Firebase Firestore:
-    // All data of songs and artists are taken directly from Firebase in real-time!
+    // If Firestore has documents, stream them live into the app!
     let unsubSongs = () => {}
     let unsubArtists = () => {}
 
     try {
-      // Listen to 'songs' collection from Firebase
-      unsubSongs = onSnapshot(collection(db, 'songs'), (snapshot) => {
-        if (!snapshot.empty) {
-          const firestoreSongs = snapshot.docs.map(doc => ({
-            id: doc.id,
-            ...doc.data()
-          }))
-          setSongs(firestoreSongs)
+      if (db) {
+        // Listen to 'songs' collection from Firebase
+        unsubSongs = onSnapshot(collection(db, 'songs'), (snapshot) => {
+          if (!snapshot.empty) {
+            const firestoreSongs = snapshot.docs.map(doc => ({
+              id: doc.id,
+              ...doc.data()
+            }))
+            setSongs(firestoreSongs)
+            setLoading(false)
+            Preferences.set({ key: 'cached_songs', value: JSON.stringify(firestoreSongs) }).catch(() => {})
+          } else {
+            setLoading(false)
+          }
+        }, (error) => {
+          console.warn('Firestore songs listener error (offline/rules):', error)
           setLoading(false)
-          Preferences.set({ key: 'cached_songs', value: JSON.stringify(firestoreSongs) }).catch(() => {})
-        } else {
-          setLoading(false)
-        }
-      }, (error) => {
-        console.warn('Firestore songs listener error (offline/rules):', error)
-        setLoading(false)
-      })
+        })
 
-      // Listen to 'artists' collection from Firebase
-      unsubArtists = onSnapshot(collection(db, 'artists'), (snapshot) => {
-        if (!snapshot.empty) {
-          const firestoreArtists = {}
-          snapshot.docs.forEach(doc => {
-            firestoreArtists[doc.id] = { id: doc.id, ...doc.data() }
-          })
-          setArtists(firestoreArtists)
+        // Listen to 'artists' collection from Firebase
+        unsubArtists = onSnapshot(collection(db, 'artists'), (snapshot) => {
+          if (!snapshot.empty) {
+            const firestoreArtists = {}
+            snapshot.docs.forEach(doc => {
+              firestoreArtists[doc.id] = { id: doc.id, ...doc.data() }
+            })
+            setArtists(firestoreArtists)
+            setLoading(false)
+            Preferences.set({ key: 'cached_artists', value: JSON.stringify(firestoreArtists) }).catch(() => {})
+          } else {
+            setLoading(false)
+          }
+        }, (error) => {
+          console.warn('Firestore artists listener error (offline/rules):', error)
           setLoading(false)
-          Preferences.set({ key: 'cached_artists', value: JSON.stringify(firestoreArtists) }).catch(() => {})
-        } else {
-          setLoading(false)
-        }
-      }, (error) => {
-        console.warn('Firestore artists listener error (offline/rules):', error)
-        setLoading(false)
-      })
+        })
+      }
     } catch (e) {
       console.warn('Failed to setup Firestore listeners:', e)
       setLoading(false)
