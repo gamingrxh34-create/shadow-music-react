@@ -9,6 +9,7 @@
     "preview": "vite preview",
     "postinstall": "node scripts/apply-patches.js",
     "ingest": "node scripts/ingest-music.mjs",
+    "update-photos": "node scripts/update-photos.mjs",
     "reset-photos": "node scripts/reset-photos.mjs"
   },
   "dependencies": {
