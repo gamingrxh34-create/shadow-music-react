@@ -5,6 +5,7 @@ import { Capacitor } from '@capacitor/core'
 import { usePlayer } from '../contexts/PlayerContext'
 import { useUserData } from '../contexts/UserDataContext'
 import { useDownload } from '../contexts/DownloadContext'
+import { getOptimizedImageUrl } from '../utils/imageUtils'
 import { IoEllipsisVertical, IoStar, IoStarOutline, IoAdd, IoPersonOutline, IoMusicalNotes, IoMenu, IoTrashOutline, IoDownloadOutline, IoCheckmarkCircle, IoPlayOutline, IoListOutline } from 'react-icons/io5'
 import BottomSheet from './BottomSheet'
 
@@ -68,7 +69,7 @@ function TrackRow({ track, index, allTracks, playlistId, draggableProvided, drag
         )}
         
         <img 
-          src={coverSrc}
+          src={getOptimizedImageUrl(coverSrc, 120)}
           alt=""
           className="w-11 h-11 rounded-md object-cover flex-shrink-0"
           loading="lazy"
@@ -123,7 +124,7 @@ function TrackRow({ track, index, allTracks, playlistId, draggableProvided, drag
 
       <BottomSheet isOpen={sheetType === 'star'} onClose={() => setSheetType(null)}>
         <div className="flex items-center gap-3 mb-4 pb-3 border-b border-white/10">
-          <img src={coverSrc} alt="" className="w-10 h-10 rounded-md object-cover" />
+          <img src={getOptimizedImageUrl(coverSrc, 100)} alt="" className="w-10 h-10 rounded-md object-cover" />
           <div className="flex-1 min-w-0">
             <div className="text-sm font-bold text-white truncate">{track.title}</div>
             <div className="text-xs text-white/50">{track.artist}</div>
@@ -157,7 +158,7 @@ function TrackRow({ track, index, allTracks, playlistId, draggableProvided, drag
 
       <BottomSheet isOpen={sheetType === 'menu'} onClose={() => setSheetType(null)}>
         <div className="flex items-center gap-3 mb-5 pb-4 border-b border-white/10">
-          <img src={coverSrc} alt="" className="w-12 h-12 rounded-md object-cover" />
+          <img src={getOptimizedImageUrl(coverSrc, 120)} alt="" className="w-12 h-12 rounded-md object-cover" />
           <div className="flex-1 min-w-0">
             <div className="text-sm font-bold text-white truncate">{track.title}</div>
             <div className="text-xs text-white/50">{track.artist}</div>

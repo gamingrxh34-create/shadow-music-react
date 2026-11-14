@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { FastAverageColor } from 'fast-average-color'
 import { Haptics, ImpactStyle } from '@capacitor/haptics'
+import { getOptimizedImageUrl } from '../utils/imageUtils'
 import QueueSheet from './QueueSheet'
 import {
   IoChevronDown, IoPlay, IoPause,
@@ -144,7 +145,7 @@ function NowPlaying({ onClose }) {
                 />
               )}
               <img
-                src={currentTrack.coverUrl}
+                src={getOptimizedImageUrl(currentTrack.coverUrl, 600)}
                 alt={currentTrack.title}
                 className="w-[88%] aspect-square rounded-[20px] object-cover shadow-2xl shadow-black/80 relative z-10"
               />
@@ -273,7 +274,7 @@ function NowPlaying({ onClose }) {
                 <div className="glass rounded-2xl p-5">
                   <div className="flex items-center gap-4 mb-3">
                     <img 
-                      src={artistData.image || 'https://via.placeholder.com/60'} 
+                      src={getOptimizedImageUrl(artistData.image, 150)} 
                       alt={artistData.name}
                       className="w-14 h-14 rounded-full object-cover"
                     />

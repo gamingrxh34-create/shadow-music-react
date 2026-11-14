@@ -5,6 +5,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { useUserData } from '../contexts/UserDataContext'
 import { useDownload } from '../contexts/DownloadContext'
 import { useMusicData } from '../contexts/MusicDataContext'
+import { getOptimizedImageUrl } from '../utils/imageUtils'
 import { IoSearch, IoAdd, IoHeart, IoClose, IoMusicalNotes } from 'react-icons/io5'
 import Skeleton from '../components/Skeleton'
 import TrackRow from '../components/TrackRow'
@@ -118,7 +119,7 @@ function Library() {
                   className="flex items-center gap-3 py-3 cursor-pointer hover:bg-white/5 active:bg-white/[0.08] rounded-lg px-2 transition-colors"
                 >
                   {getPlaylistCover(playlist) ? (
-                    <img src={getPlaylistCover(playlist)} alt="" className="w-14 h-14 rounded-md object-cover" />
+                    <img src={getOptimizedImageUrl(getPlaylistCover(playlist), 120)} alt="" className="w-14 h-14 rounded-md object-cover" />
                   ) : (
                     <div className="w-14 h-14 rounded-md bg-white/[0.08] flex items-center justify-center">
                       <IoMusicalNotes className="text-white/40 text-xl" />
@@ -193,7 +194,7 @@ function Library() {
                 className="flex items-center gap-3 py-3 cursor-pointer hover:bg-white/5 active:bg-white/[0.08] rounded-lg px-2 transition-colors"
               >
                 <img
-                  src={artist.image || 'https://via.placeholder.com/56'}
+                  src={getOptimizedImageUrl(artist.image, 120)}
                   alt=""
                   className="w-14 h-14 rounded-full object-cover bg-white/5"
                 />
@@ -267,7 +268,7 @@ function Library() {
                           className="flex items-center gap-3 py-3 cursor-pointer hover:bg-white/5 active:bg-white/[0.08] rounded-lg px-2 transition-colors"
                         >
                           {getPlaylistCover(playlist) ? (
-                            <img src={getPlaylistCover(playlist)} alt="" className="w-14 h-14 rounded-md object-cover" />
+                            <img src={getOptimizedImageUrl(getPlaylistCover(playlist), 120)} alt="" className="w-14 h-14 rounded-md object-cover" />
                           ) : (
                             <div className="w-14 h-14 rounded-md bg-white/[0.08] flex items-center justify-center">
                               <IoMusicalNotes className="text-white/40 text-xl" />

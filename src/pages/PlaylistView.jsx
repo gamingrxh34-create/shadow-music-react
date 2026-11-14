@@ -5,6 +5,7 @@ import { usePlayer } from '../contexts/PlayerContext'
 import { useUserData } from '../contexts/UserDataContext'
 import { useMusicData } from '../contexts/MusicDataContext'
 import { useDownload } from '../contexts/DownloadContext'
+import { getOptimizedImageUrl } from '../utils/imageUtils'
 import TrackRow from '../components/TrackRow'
 import { IoArrowBack, IoPlay, IoHeart, IoDownloadOutline, IoCheckmarkCircle, IoPencil, IoMusicalNotes } from 'react-icons/io5'
 import { DragDropContext, Droppable, Draggable } from '@hello-pangea/dnd'
@@ -33,10 +34,10 @@ export default function PlaylistView() {
     isLiked = false
   }
 
-  // Calculate total listening time
-  const totalMinutes = Math.round(playlistSongs.length * 3.5)
-  const hours = Math.floor(totalMinutes / 60)
-  const mins = totalMinutes % 60
+  // Calculate total listening time accurately from actual song durations
+  const totalSeconds = playlistSongs.reduce((acc, s) => acc + (Number(s.duration) || 210), 0)
+  const hours = Math.floor(totalSeconds / 3600)
+  const mins = Math.floor((totalSeconds % 3600) / 60)
   const timeStr = hours > 0 ? `${hours} hr ${mins} min` : `${mins} min`
 
   const handleDragEnd = (result) => {
@@ -90,7 +91,7 @@ export default function PlaylistView() {
             onClick={handleEditCover}
           >
             {playlist?.coverUrl ? (
-              <img src={playlist.coverUrl} alt="Cover" className="w-full h-full object-cover" />
+              <img src={getOptimizedImageUrl(playlist.coverUrl, 300)} alt="Cover" className="w-full h-full object-cover" />
             ) : (
               <span className="text-white/40 text-5xl">♪</span>
             )}

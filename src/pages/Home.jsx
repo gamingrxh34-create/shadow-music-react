@@ -4,6 +4,7 @@ import { useAuth } from '../contexts/AuthContext'
 import { usePlayer } from '../contexts/PlayerContext'
 import { useUserData } from '../contexts/UserDataContext'
 import { useMusicData } from '../contexts/MusicDataContext'
+import { getOptimizedImageUrl } from '../utils/imageUtils'
 import MediaCard from '../components/MediaCard'
 import { IoSettingsOutline, IoClose } from 'react-icons/io5'
 import SettingsModal from '../components/SettingsModal'
@@ -61,7 +62,7 @@ function Home() {
         <div className="relative h-56 rounded-2xl overflow-hidden mb-8 shadow-xl press-scale cursor-pointer group" onClick={() => play(allSongs[0], allSongs)}>
           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent z-10" />
           <img 
-            src={allSongs[0].coverUrl || 'https://via.placeholder.com/300'} 
+            src={getOptimizedImageUrl(allSongs[0].coverUrl, 600)} 
             alt={allSongs[0].title || ''}
             className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
@@ -84,8 +85,10 @@ function Home() {
           <h2 className="text-xl font-bold text-white mb-4">Continue Listening</h2>
           <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4">
             {recentSongs.map((song) => {
-              // Mock progress between 10% and 90% for visual effect
-              const mockProgress = Math.floor(Math.random() * 80) + 10;
+              // Deterministic progress based on song so the bar is stable and never jumps around
+              const stableProgress = song.duration && song.progress 
+                ? Math.round((song.progress / song.duration) * 100)
+                : ((song.id.split('').reduce((acc, c) => acc + c.charCodeAt(0), 0) * 13) % 60) + 25;
               return (
                 <div
                   key={song.id}
@@ -99,7 +102,7 @@ function Home() {
                   </button>
                   <div onClick={() => play(song, recentSongs)} className="absolute inset-0 z-10" />
                   <div className="relative aspect-square">
-                    <img src={song.coverUrl} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    <img src={getOptimizedImageUrl(song.coverUrl, 200)} alt="" className="w-full h-full object-cover" loading="lazy" />
                     <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                       <div className="w-10 h-10 rounded-full bg-white/20 backdrop-blur-md flex items-center justify-center text-white pl-1">
                         <svg viewBox="0 0 24 24" fill="currentColor" className="w-5 h-5"><path d="M8 5v14l11-7z"/></svg>
@@ -110,7 +113,7 @@ function Home() {
                     <div className="text-[13px] font-semibold text-white truncate mb-1">{song.title}</div>
                     <div className="text-[11px] text-white/50 truncate mb-3">{song.artist}</div>
                     <div className="w-full h-1 bg-white/10 rounded-full overflow-hidden">
-                      <div className="h-full bg-brand-300 rounded-full" style={{ width: `${mockProgress}%` }} />
+                      <div className="h-full bg-brand-300 rounded-full" style={{ width: `${stableProgress}%` }} />
                     </div>
                   </div>
                 </div>

@@ -4,6 +4,7 @@ import { motion } from 'framer-motion'
 import { usePlayer } from '../contexts/PlayerContext'
 import { useUserData } from '../contexts/UserDataContext'
 import { useMusicData } from '../contexts/MusicDataContext'
+import { getOptimizedImageUrl } from '../utils/imageUtils'
 import TrackRow from '../components/TrackRow'
 import { IoArrowBack, IoPlay } from 'react-icons/io5'
 
@@ -51,7 +52,7 @@ export default function ArtistView() {
       </div>
 
       <div className="px-4 pt-6 flex flex-col items-center">
-        <img src={artist.image || 'https://via.placeholder.com/200'} alt={artist.name} className="w-40 h-40 rounded-full object-cover shadow-2xl mb-4" />
+        <img src={getOptimizedImageUrl(artist.image, 320)} alt={artist.name} className="w-40 h-40 rounded-full object-cover shadow-2xl mb-4" />
         <h1 className="text-3xl font-black text-white text-center mb-4">{artist.name}</h1>
         
         <div className="flex gap-4 mb-6">

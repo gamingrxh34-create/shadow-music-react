@@ -3,6 +3,7 @@ import { usePlayer } from '../contexts/PlayerContext'
 import { useDownload } from '../contexts/DownloadContext'
 import { useNavigate } from 'react-router-dom'
 import { Capacitor } from '@capacitor/core'
+import { getOptimizedImageUrl } from '../utils/imageUtils'
 
 function MediaCard({ item, type = 'song', allTracks = [] }) {
   const { play } = usePlayer()
@@ -36,7 +37,7 @@ function MediaCard({ item, type = 'song', allTracks = [] }) {
     >
       <div className="relative">
         <img
-          src={coverSrc}
+          src={getOptimizedImageUrl(coverSrc, isArtist ? 250 : 300)}
           alt={item.title || item.name}
           className={`w-full aspect-square object-cover bg-surface-100 ${
             isArtist ? 'rounded-full' : 'rounded-lg'

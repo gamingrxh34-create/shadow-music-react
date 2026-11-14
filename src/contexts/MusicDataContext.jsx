@@ -1,6 +1,6 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
 import { db } from '../firebase/config'
-import { collection, onSnapshot } from 'firebase/firestore'
+import { collection, onSnapshot, query, limit } from 'firebase/firestore'
 import { Preferences } from '@capacitor/preferences'
 import { DEFAULT_ARTISTS, DEFAULT_SONGS } from '../data/defaultData'
 
@@ -40,8 +40,9 @@ export function MusicDataProvider({ children }) {
 
     try {
       if (db) {
-        // Listen to 'songs' collection from Firebase
-        unsubSongs = onSnapshot(collection(db, 'songs'), (snapshot) => {
+        // Listen to 'songs' collection with safe limit for performance & quota preservation
+        const songsQuery = query(collection(db, 'songs'), limit(250))
+        unsubSongs = onSnapshot(songsQuery, (snapshot) => {
           if (!snapshot.empty) {
             const firestoreSongs = snapshot.docs.map(doc => ({
               id: doc.id,
@@ -58,8 +59,9 @@ export function MusicDataProvider({ children }) {
           setLoading(false)
         })
 
-        // Listen to 'artists' collection from Firebase
-        unsubArtists = onSnapshot(collection(db, 'artists'), (snapshot) => {
+        // Listen to 'artists' collection with safe limit
+        const artistsQuery = query(collection(db, 'artists'), limit(150))
+        unsubArtists = onSnapshot(artistsQuery, (snapshot) => {
           if (!snapshot.empty) {
             const firestoreArtists = {}
             snapshot.docs.forEach(doc => {

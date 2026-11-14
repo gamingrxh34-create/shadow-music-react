@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { usePlayer } from '../contexts/PlayerContext'
 import { useUserData } from '../contexts/UserDataContext'
+import { getOptimizedImageUrl } from '../utils/imageUtils'
 import { IoPlay, IoPause, IoStar, IoStarOutline } from 'react-icons/io5'
 import { motion } from 'framer-motion'
 import { FastAverageColor } from 'fast-average-color'
@@ -80,7 +81,7 @@ function MiniPlayer({ onExpand }) {
         onClick={onExpand}
       >
         <img 
-          src={currentTrack.coverUrl} 
+          src={getOptimizedImageUrl(currentTrack.coverUrl, 100)} 
           alt={currentTrack.title}
           className="w-11 h-11 rounded-lg object-cover flex-shrink-0"
         />
