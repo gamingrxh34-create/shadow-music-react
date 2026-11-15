@@ -60,6 +60,52 @@ async function uploadToR2(key, body, contentType) {
   return `${R2_PUBLIC_URL}/${key}`
 }
 
+// Smart resolver for local files: R2 -> Cloudinary check -> Free CDN (Catbox)
+async function uploadOrResolveImage(filePath, originalFilename, prefix = 'covers') {
+  // 1. If R2 is configured, upload to Cloudflare R2
+  if (hasR2Config) {
+    const ext = path.extname(originalFilename).toLowerCase()
+    const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
+    const key = `${prefix}/${crypto.randomBytes(4).toString('hex')}_${encodeURIComponent(path.parse(originalFilename).name)}${ext}`
+    const buffer = fs.readFileSync(filePath)
+    return await uploadToR2(key, buffer, mime)
+  }
+
+  // 2. Check if file is already live on the user's Cloudinary account
+  const cloudName = 'dytac5x9v'
+  const cloudinaryCandidate = `https://res.cloudinary.com/${cloudName}/image/upload/${encodeURIComponent(originalFilename)}`
+  try {
+    const headRes = await fetch(cloudinaryCandidate, { method: 'HEAD' })
+    if (headRes.ok) {
+      console.log(`\n   ☁️ Matched live image on Cloudinary CDN!`)
+      return cloudinaryCandidate
+    }
+  } catch {}
+
+  // 3. Auto-upload to free permanent image CDN (catbox.moe)
+  console.log(`\n   ☁️ Uploading local image to fast CDN...`)
+  try {
+    const buf = fs.readFileSync(filePath)
+    const ext = path.extname(originalFilename).toLowerCase()
+    const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
+    const form = new FormData()
+    form.append('reqtype', 'fileupload')
+    form.append('fileToUpload', new Blob([buf], { type: mime }), originalFilename)
+    const catRes = await fetch('https://catbox.moe/user/api.php', { method: 'POST', body: form })
+    if (catRes.ok) {
+      const hostedUrl = (await catRes.text()).trim()
+      if (hostedUrl.startsWith('http')) {
+        console.log(`   ☁️ Uploaded successfully!`)
+        return hostedUrl
+      }
+    }
+  } catch (err) {
+    console.warn(`   ⚠️ CDN upload notice:`, err.message)
+  }
+
+  return null
+}
+
 // Helper: Query Apple Music for official 600x600 HD song cover
 async function fetchAppleMusicCover(title, artist) {
   try {
@@ -95,9 +141,33 @@ function normalize(str) {
   return (str || '').toLowerCase().replace(/[^a-z0-9]/g, '')
 }
 
+function matchesSong(filename, title, artist) {
+  const base = path.parse(filename).name
+  const nFile = normalize(base)
+  const nTitle = normalize(title)
+  const nCombo1 = normalize(`${artist} ${title}`)
+  const nCombo2 = normalize(`${title} ${artist}`)
+
+  if (nFile === nTitle || nFile === nCombo1 || nFile === nCombo2) return true
+  if (nTitle.length >= 4 && (nFile.startsWith(nTitle) || nFile.includes(nTitle))) return true
+  if (nFile.length >= 4 && (nTitle.startsWith(nFile) || nTitle.includes(nFile))) return true
+  return false
+}
+
+function matchesArtist(filename, artistName) {
+  const base = path.parse(filename).name
+  const nFile = normalize(base)
+  const nArtist = normalize(artistName)
+
+  if (nFile === nArtist) return true
+  if (nArtist.length >= 3 && (nFile.startsWith(nArtist) || nFile.includes(nArtist))) return true
+  if (nFile.length >= 3 && (nArtist.startsWith(nFile) || nArtist.includes(nFile))) return true
+  return false
+}
+
 async function main() {
   console.log('\n======================================================')
-  console.log('       SHADOW MUSIC — SMART PHOTO & COVER UPDATER      ')
+  console.log('       SHADOW MUSIC — SMART PHOTO AND COVER UPDATER     ')
   console.log('======================================================\n')
 
   const stagingDir = path.resolve(__dirname, '../music_staging')
@@ -109,7 +179,7 @@ async function main() {
   if (!fs.existsSync(artistsDir)) fs.mkdirSync(artistsDir, { recursive: true })
   if (!fs.existsSync(completedDir)) fs.mkdirSync(completedDir, { recursive: true })
 
-  // 1. Fetch all songs & artists from Firestore
+  // 1. Fetch all songs and artists from Firestore
   console.log('📡 Connecting to Firestore...')
   const [songsSnap, artistsSnap] = await Promise.all([
     getDocs(collection(db, 'songs')),
@@ -127,13 +197,6 @@ async function main() {
   console.log(`   - "music_staging/covers":  ${localCoverFiles.length} file(s)`)
   console.log(`   - "music_staging/artists": ${localArtistFiles.length} file(s)\n`)
 
-  if (hasR2Config) {
-    console.log(`☁️  Cloudflare R2 is configured: Local photos will be uploaded to R2.`)
-  } else if (localCoverFiles.length > 0 || localArtistFiles.length > 0) {
-    console.warn(`⚠️  Notice: Local images found, but Cloudflare R2 is not configured in .env yet.`)
-    console.warn(`   Official HD covers from Apple Music & Deezer will be used directly.\n`)
-  }
-
   // ----------------------------------------------------
   // 2. UPDATE ARTIST PHOTOS
   // ----------------------------------------------------
@@ -146,30 +209,25 @@ async function main() {
   for (const aDoc of artistsSnap.docs) {
     const artistData = aDoc.data()
     const artistName = artistData.name || aDoc.id
-    const currentImage = artistData.image || ''
-
     console.log(`\n🎤 Artist: "${artistName}"`)
 
     // Check if user dropped a local image in music_staging/artists/
-    const matchingLocalFile = localArtistFiles.find(f => {
-      const base = path.parse(f).name
-      return normalize(base) === normalize(artistName)
-    })
+    const matchingLocalFile = localArtistFiles.find(f => matchesArtist(f, artistName))
 
     let newImageUrl = null
 
-    if (matchingLocalFile && hasR2Config) {
-      console.log(`   Found local photo: ${matchingLocalFile}`)
+    if (matchingLocalFile) {
+      console.log(`   🖼️ Found local photo: ${matchingLocalFile}`)
       const filePath = path.join(artistsDir, matchingLocalFile)
-      const ext = path.extname(matchingLocalFile).toLowerCase()
-      const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
-      const key = `artists/${crypto.randomBytes(4).toString('hex')}_${encodeURIComponent(artistName)}${ext}`
-      const buffer = fs.readFileSync(filePath)
-      newImageUrl = await uploadToR2(key, buffer, mime)
-      console.log(`   ☁️ Uploaded to R2: ${newImageUrl}`)
+      newImageUrl = await uploadOrResolveImage(filePath, matchingLocalFile, 'artists')
 
       // Move to completed
-      fs.renameSync(filePath, path.join(completedDir, matchingLocalFile))
+      if (fs.existsSync(filePath)) {
+        try {
+          fs.copyFileSync(filePath, path.join(completedDir, matchingLocalFile))
+          fs.unlinkSync(filePath)
+        } catch {}
+      }
     } else {
       // Auto-fetch from Deezer
       console.log(`   🔍 Auto-fetching official HD portrait from Deezer...`)
@@ -178,7 +236,7 @@ async function main() {
 
     if (newImageUrl) {
       await updateDoc(doc(db, 'artists', aDoc.id), { image: newImageUrl })
-      console.log(`   ✅ Photo updated successfully! (${newImageUrl.slice(0, 70)}...)`)
+      console.log(`   ✅ Photo updated successfully! (${newImageUrl.slice(0, 65)}...)`)
       updatedArtists++
     } else {
       console.log(`   ⚠️ Could not find photo for "${artistName}". Kept as is.`)
@@ -189,7 +247,7 @@ async function main() {
   // 3. UPDATE SONG COVERS
   // ----------------------------------------------------
   console.log('\n======================================================')
-  console.log('  2. UPDATING SONG COVERS (600x600 Official Artwork)')
+  console.log('  2. UPDATING SONG COVERS')
   console.log('======================================================')
 
   let updatedSongs = 0
@@ -202,24 +260,22 @@ async function main() {
 
     process.stdout.write(`[${i + 1}/${songsSnap.docs.length}] "${title}" by ${artist}... `)
 
-    // Check local cover first
-    const matchingLocalCover = localCoverFiles.find(f => {
-      const base = path.parse(f).name
-      return normalize(base) === normalize(title) || normalize(base) === normalize(`${artist} ${title}`)
-    })
+    // Check local cover first with smart matching
+    const matchingLocalCover = localCoverFiles.find(f => matchesSong(f, title, artist))
 
     let newCoverUrl = null
 
-    if (matchingLocalCover && hasR2Config) {
+    if (matchingLocalCover) {
       const filePath = path.join(coversDir, matchingLocalCover)
-      const ext = path.extname(matchingLocalCover).toLowerCase()
-      const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
-      const key = `covers/${crypto.randomBytes(4).toString('hex')}_${encodeURIComponent(title)}${ext}`
-      const buffer = fs.readFileSync(filePath)
-      newCoverUrl = await uploadToR2(key, buffer, mime)
+      newCoverUrl = await uploadOrResolveImage(filePath, matchingLocalCover, 'covers')
 
       // Move to completed
-      fs.renameSync(filePath, path.join(completedDir, matchingLocalCover))
+      if (fs.existsSync(filePath)) {
+        try {
+          fs.copyFileSync(filePath, path.join(completedDir, matchingLocalCover))
+          fs.unlinkSync(filePath)
+        } catch {}
+      }
     } else {
       // Auto-fetch from Apple Music
       newCoverUrl = await fetchAppleMusicCover(title, artist)

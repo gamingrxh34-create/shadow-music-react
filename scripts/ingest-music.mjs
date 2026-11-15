@@ -128,6 +128,67 @@ async function fetchDeezerArtistPhoto(artistName) {
   }
 }
 
+function normalize(str) {
+  return (str || '').toLowerCase().replace(/[^a-z0-9]/g, '')
+}
+
+function matchesSong(filename, title, artist) {
+  const base = path.parse(filename).name
+  const nFile = normalize(base)
+  const nTitle = normalize(title)
+  const nCombo1 = normalize(`${artist} ${title}`)
+  const nCombo2 = normalize(`${title} ${artist}`)
+
+  if (nFile === nTitle || nFile === nCombo1 || nFile === nCombo2) return true
+  if (nTitle.length >= 4 && (nFile.startsWith(nTitle) || nFile.includes(nTitle))) return true
+  if (nFile.length >= 4 && (nTitle.startsWith(nFile) || nTitle.includes(nFile))) return true
+  return false
+}
+
+function matchesArtist(filename, artistName) {
+  const base = path.parse(filename).name
+  const nFile = normalize(base)
+  const nArtist = normalize(artistName)
+
+  if (nFile === nArtist) return true
+  if (nArtist.length >= 3 && (nFile.startsWith(nArtist) || nFile.includes(nArtist))) return true
+  if (nFile.length >= 3 && (nArtist.startsWith(nFile) || nArtist.includes(nFile))) return true
+  return false
+}
+
+// Smart resolver for local images
+async function uploadOrResolveImage(filePath, originalFilename, prefix = 'covers') {
+  if (hasR2Config) {
+    const ext = path.extname(originalFilename).toLowerCase()
+    const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
+    const key = `${prefix}/${crypto.randomBytes(4).toString('hex')}_${encodeURIComponent(path.parse(originalFilename).name)}${ext}`
+    return await uploadToR2(key, fs.readFileSync(filePath), mime)
+  }
+
+  const cloudName = 'dytac5x9v'
+  const cloudinaryCandidate = `https://res.cloudinary.com/${cloudName}/image/upload/${encodeURIComponent(originalFilename)}`
+  try {
+    const headRes = await fetch(cloudinaryCandidate, { method: 'HEAD' })
+    if (headRes.ok) return cloudinaryCandidate
+  } catch {}
+
+  try {
+    const buf = fs.readFileSync(filePath)
+    const ext = path.extname(originalFilename).toLowerCase()
+    const mime = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
+    const form = new FormData()
+    form.append('reqtype', 'fileupload')
+    form.append('fileToUpload', new Blob([buf], { type: mime }), originalFilename)
+    const catRes = await fetch('https://catbox.moe/user/api.php', { method: 'POST', body: form })
+    if (catRes.ok) {
+      const hostedUrl = (await catRes.text()).trim()
+      if (hostedUrl.startsWith('http')) return hostedUrl
+    }
+  } catch {}
+
+  return null
+}
+
 // Helper: Upload file or buffer to Cloudflare R2
 async function uploadToR2(key, body, contentType) {
   if (!s3) {
@@ -152,10 +213,12 @@ async function main() {
 
   const stagingDir = path.resolve(__dirname, '../music_staging')
   const songsDir = path.resolve(stagingDir, 'songs')
+  const coversDir = path.resolve(stagingDir, 'covers')
   const artistsDir = path.resolve(stagingDir, 'artists')
   const completedDir = path.resolve(stagingDir, 'completed')
 
   if (!fs.existsSync(songsDir)) fs.mkdirSync(songsDir, { recursive: true })
+  if (!fs.existsSync(coversDir)) fs.mkdirSync(coversDir, { recursive: true })
   if (!fs.existsSync(artistsDir)) fs.mkdirSync(artistsDir, { recursive: true })
   if (!fs.existsSync(completedDir)) fs.mkdirSync(completedDir, { recursive: true })
 
@@ -227,15 +290,25 @@ async function main() {
         console.log(`   🖼️  Found embedded album cover in MP3`)
       }
 
-      // B) Check matching local image in songs folder (e.g. SongName.jpg)
+      // B) Check matching local image in covers folder or songs folder
       if (!coverBuffer) {
-        for (const ext of ['.jpg', '.jpeg', '.png', '.webp']) {
-          const matchingImg = path.join(songsDir, `${baseName}${ext}`)
-          if (fs.existsSync(matchingImg)) {
-            coverBuffer = fs.readFileSync(matchingImg)
-            coverContentType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
-            console.log(`   🖼️  Found matching local image: ${baseName}${ext}`)
-            break
+        const coverFiles = fs.existsSync(coversDir) ? fs.readdirSync(coversDir) : []
+        const matchedCoverFile = coverFiles.find(f => matchesSong(f, title, artist))
+        if (matchedCoverFile) {
+          const matchingImg = path.join(coversDir, matchedCoverFile)
+          coverBuffer = fs.readFileSync(matchingImg)
+          const ext = path.extname(matchedCoverFile).toLowerCase()
+          coverContentType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
+          console.log(`   🖼️  Found matching local cover in covers folder: ${matchedCoverFile}`)
+        } else {
+          for (const ext of ['.jpg', '.jpeg', '.png', '.webp']) {
+            const matchingImg = path.join(songsDir, `${baseName}${ext}`)
+            if (fs.existsSync(matchingImg)) {
+              coverBuffer = fs.readFileSync(matchingImg)
+              coverContentType = ext === '.png' ? 'image/png' : ext === '.webp' ? 'image/webp' : 'image/jpeg'
+              console.log(`   🖼️  Found matching local image in songs folder: ${baseName}${ext}`)
+              break
+            }
           }
         }
       }
@@ -306,16 +379,12 @@ async function main() {
         let artistImgUrl = null
 
         // Check if user provided an artist photo in music_staging/artists/
-        for (const ext of ['.jpg', '.jpeg', '.png', '.webp']) {
-          const candidate = path.join(artistsDir, `${artistKey}${ext}`)
-          if (fs.existsSync(candidate)) {
-            console.log(`   🖼️  Found custom artist photo in staging: ${artistKey}${ext}`)
-            if (hasR2Config) {
-              const artistR2Key = `artists/${artistSlug}${ext}`
-              artistImgUrl = await uploadToR2(artistR2Key, fs.readFileSync(candidate), ext === '.png' ? 'image/png' : 'image/jpeg')
-            }
-            break
-          }
+        const artistFiles = fs.existsSync(artistsDir) ? fs.readdirSync(artistsDir) : []
+        const matchedArtistFile = artistFiles.find(f => matchesArtist(f, artistKey))
+        if (matchedArtistFile) {
+          const candidate = path.join(artistsDir, matchedArtistFile)
+          console.log(`   🖼️  Found custom artist photo in staging: ${matchedArtistFile}`)
+          artistImgUrl = await uploadOrResolveImage(candidate, matchedArtistFile, 'artists')
         }
 
         // If no custom local photo, auto-fetch official 1000x1000 HD portrait
