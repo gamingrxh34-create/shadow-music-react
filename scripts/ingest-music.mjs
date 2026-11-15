@@ -113,6 +113,21 @@ async function fetchLyrics(title, artist) {
   }
 }
 
+// Helper: Fetch official 1000x1000 HD artist portrait
+async function fetchDeezerArtistPhoto(artistName) {
+  try {
+    const query = encodeURIComponent(artistName.trim())
+    const res = await fetch(`https://api.deezer.com/search/artist?q=${query}`)
+    if (!res.ok) return null
+    const data = await res.json()
+    if (!data.data || data.data.length === 0) return null
+    const match = data.data[0]
+    return match.picture_xl || match.picture_big || match.picture_medium || null
+  } catch {
+    return null
+  }
+}
+
 // Helper: Upload file or buffer to Cloudflare R2
 async function uploadToR2(key, body, contentType) {
   if (!s3) {
@@ -288,18 +303,30 @@ async function main() {
 
       if (isNewArtist) {
         console.log(`   👤 New artist detected: "${artistKey}". Setting up profile...`)
-        let artistImgUrl = finalCoverUrl
+        let artistImgUrl = null
 
         // Check if user provided an artist photo in music_staging/artists/
         for (const ext of ['.jpg', '.jpeg', '.png', '.webp']) {
           const candidate = path.join(artistsDir, `${artistKey}${ext}`)
           if (fs.existsSync(candidate)) {
-            console.log(`   🖼️  Found custom artist photo: ${artistKey}${ext}`)
+            console.log(`   🖼️  Found custom artist photo in staging: ${artistKey}${ext}`)
             if (hasR2Config) {
               const artistR2Key = `artists/${artistSlug}${ext}`
               artistImgUrl = await uploadToR2(artistR2Key, fs.readFileSync(candidate), ext === '.png' ? 'image/png' : 'image/jpeg')
             }
             break
+          }
+        }
+
+        // If no custom local photo, auto-fetch official 1000x1000 HD portrait
+        if (!artistImgUrl) {
+          console.log(`   🔎 Auto-fetching official HD artist portrait for "${artistKey}"...`)
+          const deezerPic = await fetchDeezerArtistPhoto(artistKey)
+          if (deezerPic) {
+            console.log(`   ✅ Found official artist photo!`)
+            artistImgUrl = deezerPic
+          } else {
+            artistImgUrl = finalCoverUrl
           }
         }
 
