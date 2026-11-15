@@ -234,9 +234,13 @@ async function main() {
       newImageUrl = await fetchDeezerArtistPhoto(artistName)
     }
 
+    const currentImage = artistData.image || ''
     if (newImageUrl) {
       await updateDoc(doc(db, 'artists', aDoc.id), { image: newImageUrl })
       console.log(`   ✅ Photo updated successfully! (${newImageUrl.slice(0, 65)}...)`)
+      updatedArtists++
+    } else if (currentImage) {
+      console.log(`   ✨ Kept existing photo!`)
       updatedArtists++
     } else {
       console.log(`   ⚠️ Could not find photo for "${artistName}". Kept as is.`)
@@ -257,6 +261,7 @@ async function main() {
     const songData = sDoc.data()
     const title = songData.title || ''
     const artist = songData.artist || ''
+    const currentCover = songData.coverUrl || ''
 
     process.stdout.write(`[${i + 1}/${songsSnap.docs.length}] "${title}" by ${artist}... `)
 
@@ -285,8 +290,11 @@ async function main() {
       await updateDoc(doc(db, 'songs', sDoc.id), { coverUrl: newCoverUrl })
       console.log(`✅ Updated`)
       updatedSongs++
+    } else if (currentCover) {
+      console.log(`✨ Kept existing cover`)
+      updatedSongs++
     } else {
-      console.log(`⚠️ Not found`)
+      console.log(`⚠️ Not found (Drop image in covers folder)`)
     }
   }
 
