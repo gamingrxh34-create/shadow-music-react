@@ -5,6 +5,7 @@ import { getOptimizedImageUrl } from '../utils/imageUtils'
 import { IoPlay, IoPause, IoStar, IoStarOutline } from 'react-icons/io5'
 import { motion } from 'framer-motion'
 import { FastAverageColor } from 'fast-average-color'
+import { Haptics, ImpactStyle } from '@capacitor/haptics'
 
 function MiniPlayer({ onExpand }) {
   const { currentTrack, isPlaying, togglePlay, progress, duration, next, prev, seek } = usePlayer()
@@ -12,12 +13,17 @@ function MiniPlayer({ onExpand }) {
 
   if (!currentTrack) return null
 
-  const [dominantColor, setDominantColor] = useState('rgba(255,255,255,0.05)')
+  const [dominantColor, setDominantColor] = useState('#0a192f')
+
+  const triggerHaptic = (style = ImpactStyle.Light) => {
+    try {
+      Haptics.impact({ style }).catch(() => {})
+    } catch {}
+  }
 
   useEffect(() => {
     if (currentTrack?.coverUrl) {
       const fac = new FastAverageColor()
-      // Use tiny Cloudinary thumbnail for color extraction to avoid blocking main thread
       let colorUrl = currentTrack.coverUrl
       if (colorUrl.includes('/upload/')) {
         colorUrl = colorUrl.replace('/upload/', '/upload/w_50,h_50,c_fill/')
@@ -26,15 +32,14 @@ function MiniPlayer({ onExpand }) {
         .then(color => {
           setDominantColor(color.hex)
         })
-        .catch(e => {
-          console.error('Failed to get dominant color', e)
-          setDominantColor('rgba(255,255,255,0.05)')
+        .catch(() => {
+          setDominantColor('#0a192f')
         })
     }
   }, [currentTrack?.coverUrl])
 
   const progressPercent = duration > 0 ? (progress / duration) * 100 : 0
-  const liked = isSongLiked(currentTrack.id)
+  const liked = isSongLiked ? isSongLiked(currentTrack.id) : false
 
   return (
     <motion.div 
@@ -45,9 +50,11 @@ function MiniPlayer({ onExpand }) {
       dragSnapToOrigin={true}
       onDragEnd={(e, { offset, velocity }) => {
         if (offset.x > 50 || velocity.x > 300) {
-          prev();
+          triggerHaptic(ImpactStyle.Medium)
+          prev()
         } else if (offset.x < -50 || velocity.x < -300) {
-          next();
+          triggerHaptic(ImpactStyle.Medium)
+          next()
         }
       }}
       className="fixed left-2 right-2 z-40 animate-slide-up"
@@ -60,7 +67,7 @@ function MiniPlayer({ onExpand }) {
           style={{ width: '100%' }}
         />
         <div 
-          className="absolute top-0 left-0 h-full bg-brand-300 rounded-tl-xl"
+          className="absolute top-0 left-0 h-full bg-brand-300 rounded-tl-xl shadow-[0_0_8px_rgba(56,209,176,0.8)]"
           style={{ width: `${progressPercent}%` }}
         />
         <input
@@ -76,39 +83,52 @@ function MiniPlayer({ onExpand }) {
       </div>
 
       <div 
-        className="rounded-xl flex items-center gap-3 p-2 pr-3 cursor-pointer shadow-lg transition-colors duration-1000 border border-white/5"
-        style={{ backgroundColor: dominantColor }}
+        className="rounded-xl flex items-center gap-3 p-2.5 pr-3 cursor-pointer shadow-xl transition-all duration-700 border border-white/10 backdrop-blur-xl"
+        style={{ 
+          background: `linear-gradient(135deg, ${dominantColor}55 0%, rgba(10, 15, 25, 0.92) 75%)`
+        }}
         onClick={onExpand}
       >
         <img 
           src={getOptimizedImageUrl(currentTrack.coverUrl, 100)} 
           alt={currentTrack.title}
-          className="w-11 h-11 rounded-lg object-cover flex-shrink-0"
+          className="w-11 h-11 rounded-lg object-cover flex-shrink-0 shadow-md border border-white/10"
         />
 
         <div className="flex-1 min-w-0">
-          <div className="text-sm font-semibold text-white truncate">
-            {currentTrack.title}
+          <div className="text-sm font-semibold text-white truncate flex items-center gap-2">
+            <span>{currentTrack.title}</span>
           </div>
-          <div className="text-xs text-white/50 truncate">
-            {currentTrack.artist}
+          <div className="text-xs text-white/50 truncate flex items-center gap-1.5 mt-0.5">
+            <span>{currentTrack.artist}</span>
+            <span className="text-[9px] text-brand-300/80 font-bold px-1 rounded bg-brand-300/10">HQ</span>
           </div>
         </div>
 
         {/* Star Button */}
         <button 
-          onClick={(e) => { e.stopPropagation(); toggleLikeSong(currentTrack.id) }}
-          className={`text-lg press-scale ${liked ? 'text-brand-300' : 'text-white/30'}`}
+          onClick={(e) => { 
+            e.stopPropagation()
+            triggerHaptic(ImpactStyle.Light)
+            toggleLikeSong(currentTrack.id) 
+          }}
+          className={`text-xl press-scale p-1 transition-colors ${liked ? 'text-brand-300' : 'text-white/30 hover:text-white'}`}
+          title={liked ? "Liked" : "Like song"}
         >
           {liked ? <IoStar /> : <IoStarOutline />}
         </button>
 
         {/* Play/Pause */}
         <button 
-          onClick={(e) => { e.stopPropagation(); togglePlay() }}
-          className="w-9 h-9 flex items-center justify-center text-white text-xl press-scale"
+          onClick={(e) => { 
+            e.stopPropagation()
+            triggerHaptic(ImpactStyle.Light)
+            togglePlay() 
+          }}
+          className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-xl press-scale transition-colors"
+          title={isPlaying ? "Pause" : "Play"}
         >
-          {isPlaying ? <IoPause /> : <IoPlay />}
+          {isPlaying ? <IoPause /> : <IoPlay className="ml-0.5" />}
         </button>
       </div>
     </motion.div>

@@ -1,5 +1,6 @@
 import { useLocation, useNavigate } from 'react-router-dom'
 import { IoHome, IoHomeOutline, IoSearch, IoSearchOutline, IoLibrary, IoLibraryOutline } from 'react-icons/io5'
+import { Haptics, ImpactStyle } from '@capacitor/haptics'
 
 const tabs = [
   { path: '/home', label: 'Home', activeIcon: IoHome, inactiveIcon: IoHomeOutline },
@@ -11,8 +12,15 @@ function BottomNav() {
   const location = useLocation()
   const navigate = useNavigate()
 
+  const handleTabClick = (path) => {
+    try {
+      Haptics.impact({ style: ImpactStyle.Light }).catch(() => {})
+    } catch {}
+    navigate(path)
+  }
+
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-black border-t border-white/[0.04]">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 bg-black/95 backdrop-blur-xl border-t border-white/[0.06]">
       <div className="flex items-center justify-around py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))]">
         {tabs.map((tab) => {
           const isActive = location.pathname === tab.path
@@ -20,13 +28,13 @@ function BottomNav() {
           return (
             <button
               key={tab.path}
-              onClick={() => navigate(tab.path)}
+              onClick={() => handleTabClick(tab.path)}
               className={`flex flex-col items-center gap-1 px-6 py-1 transition-all duration-200 press-scale ${
-                isActive ? 'text-brand-300' : 'text-white/40'
+                isActive ? 'text-brand-300' : 'text-white/40 hover:text-white/70'
               }`}
             >
-              <Icon className={`transition-all duration-200 ${isActive ? 'text-2xl' : 'text-xl'}`} />
-              <span className={`text-[10px] font-medium ${isActive ? 'text-brand-300' : 'text-white/40'}`}>
+              <Icon className={`transition-all duration-200 ${isActive ? 'text-2xl scale-105' : 'text-xl'}`} />
+              <span className={`text-[10px] font-semibold tracking-wide ${isActive ? 'text-brand-300' : 'text-white/40'}`}>
                 {tab.label}
               </span>
             </button>

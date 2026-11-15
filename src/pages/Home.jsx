@@ -83,7 +83,7 @@ function Home() {
         <section className="mb-8">
           <div className="text-[10px] font-black tracking-widest text-brand-300 uppercase mb-1">Pick Up Where You Left Off</div>
           <h2 className="text-xl font-bold text-white mb-4">Continue Listening</h2>
-          <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4">
+          <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-4 -mx-4 px-4 snap-x snap-mandatory scroll-smooth">
             {recentSongs.map((song) => {
               // Deterministic progress based on song so the bar is stable and never jumps around
               const stableProgress = song.duration && song.progress 
@@ -92,7 +92,7 @@ function Home() {
               return (
                 <div
                   key={song.id}
-                  className="relative min-w-[140px] max-w-[140px] glass rounded-xl overflow-hidden cursor-pointer hover:bg-white/[0.08] transition-colors press-scale group"
+                  className="relative min-w-[140px] max-w-[140px] glass rounded-xl overflow-hidden cursor-pointer hover:bg-white/[0.08] transition-colors press-scale group snap-start"
                 >
                   <button
                     onClick={(e) => { e.stopPropagation(); removeFromHistory(song.id) }}
@@ -127,10 +127,10 @@ function Home() {
       <section className="mb-8">
         <div className="text-[10px] font-black tracking-widest text-brand-300 uppercase mb-1">Personalized For You</div>
         <h2 className="text-xl font-bold text-white mb-4">Made for You</h2>
-        <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4">
+        <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4 snap-x snap-mandatory scroll-smooth">
           {allSongs.length === 0 ? (
             Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="min-w-[150px] max-w-[150px]">
+              <div key={i} className="min-w-[150px] max-w-[150px] snap-start">
                 <Skeleton className="w-full aspect-square rounded-xl mb-3" />
                 <Skeleton className="w-3/4 h-4 mb-2" />
                 <Skeleton className="w-1/2 h-3" />
@@ -138,7 +138,7 @@ function Home() {
             ))
           ) : (
             madeForYou.map((song) => (
-              <div key={song.id} className="min-w-[150px] max-w-[150px]">
+              <div key={song.id} className="min-w-[150px] max-w-[150px] snap-start">
                 <MediaCard item={song} type="song" allTracks={madeForYou} />
               </div>
             ))
@@ -151,17 +151,17 @@ function Home() {
       <section className="mb-8">
         <div className="text-[10px] font-black tracking-widest text-brand-300 uppercase mb-1">Trending Now</div>
         <h2 className="text-xl font-bold text-white mb-4">Top Artists</h2>
-        <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4">
+        <div className="flex gap-4 overflow-x-auto hide-scrollbar pb-2 -mx-4 px-4 snap-x snap-mandatory scroll-smooth">
           {Object.keys(allArtists).length === 0 ? (
             Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="min-w-[130px] max-w-[130px] flex flex-col items-center">
+              <div key={i} className="min-w-[130px] max-w-[130px] flex flex-col items-center snap-start">
                 <Skeleton className="w-[130px] h-[130px] rounded-full mb-3" />
                 <Skeleton className="w-3/4 h-4" />
               </div>
             ))
           ) : (
             artistList.map((artist) => (
-              <div key={artist.name} className="min-w-[130px] max-w-[130px]">
+              <div key={artist.name} className="min-w-[130px] max-w-[130px] snap-start">
                 <MediaCard item={artist} type="artist" />
               </div>
             ))
