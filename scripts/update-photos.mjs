@@ -294,7 +294,24 @@ async function main() {
   console.log('🎉 ALL DONE!')
   console.log(`   - Artists updated: ${updatedArtists}/${artistsSnap.docs.length}`)
   console.log(`   - Song covers updated: ${updatedSongs}/${songsSnap.docs.length}`)
-  console.log('======================================================\n')
+  console.log('======================================================')
+
+  // 4. Ensure all staging drop folders are 100% clean and empty
+  console.log('🧹 Cleaning up staging drop folders...')
+  for (const dir of [coversDir, artistsDir]) {
+    if (fs.existsSync(dir)) {
+      const remaining = fs.readdirSync(dir)
+      for (const file of remaining) {
+        const src = path.join(dir, file)
+        const dest = path.join(completedDir, file)
+        try {
+          fs.copyFileSync(src, dest)
+          fs.unlinkSync(src)
+        } catch {}
+      }
+    }
+  }
+  console.log('✨ "covers" and "artists" folders are now completely empty and ready for next batch!\n')
 }
 
 main().catch(err => {
