@@ -14,7 +14,7 @@ import {
   IoPlaySkipBack, IoPlaySkipForward,
   IoShuffle, IoRepeat, IoStar, IoStarOutline, IoList,
   IoDownloadOutline, IoCheckmarkCircle,
-  IoChatbubbleEllipsesOutline, IoMusicalNotesOutline,
+  IoMicOutline, IoMic,
   IoContractOutline
 } from 'react-icons/io5'
 
@@ -22,7 +22,8 @@ function NowPlaying({ onClose }) {
   const {
     currentTrack, isPlaying, togglePlay,
     next, prev, seek, progress, duration,
-    shuffle, repeat, toggleShuffle, toggleRepeat
+    shuffle, repeat, toggleShuffle, toggleRepeat,
+    getActiveAudio
   } = usePlayer()
   const { isSongLiked, toggleLikeSong } = useUserData()
   const { downloadedSongs, isDownloading, downloadSong, removeDownload } = useDownload()
@@ -43,12 +44,70 @@ function NowPlaying({ onClose }) {
   const isUserScrollingRef = useRef(false)
   const scrollTimeoutRef = useRef(null)
 
+  // 60fps high-precision playhead time tracker
+  const [liveTime, setLiveTime] = useState(progress)
+
+  // User lyric timing offset (per-song calibration in seconds)
+  const [syncOffset, setSyncOffset] = useState(() => {
+    if (!currentTrack?.id) return 0
+    try {
+      const saved = localStorage.getItem(`lyric_offset_${currentTrack.id}`)
+      return saved !== null ? parseFloat(saved) : 0
+    } catch {
+      return 0
+    }
+  })
+
+  // Load saved offset when song changes
+  useEffect(() => {
+    if (!currentTrack?.id) return
+    try {
+      const saved = localStorage.getItem(`lyric_offset_${currentTrack.id}`)
+      setSyncOffset(saved !== null ? parseFloat(saved) : 0)
+    } catch {
+      setSyncOffset(0)
+    }
+  }, [currentTrack?.id])
+
+  const adjustSyncOffset = (delta) => {
+    triggerHaptic(ImpactStyle.Light)
+    setSyncOffset(prev => {
+      const nextVal = Math.round((prev + delta) * 10) / 10
+      if (currentTrack?.id) {
+        try {
+          localStorage.setItem(`lyric_offset_${currentTrack.id}`, String(nextVal))
+        } catch {}
+      }
+      return nextVal
+    })
+  }
+
   // Trigger light tactile feedback on actions
   const triggerHaptic = (style = ImpactStyle.Light) => {
     try {
       Haptics.impact({ style }).catch(() => {})
     } catch {}
   }
+
+  // High precision time loop using requestAnimationFrame while playing
+  useEffect(() => {
+    if (!isPlaying) {
+      setLiveTime(progress)
+      return
+    }
+
+    let rafId
+    const updateTick = () => {
+      const audio = getActiveAudio ? getActiveAudio() : null
+      if (audio && !audio.paused && !isNaN(audio.currentTime)) {
+        setLiveTime(audio.currentTime)
+      }
+      rafId = requestAnimationFrame(updateTick)
+    }
+
+    rafId = requestAnimationFrame(updateTick)
+    return () => cancelAnimationFrame(rafId)
+  }, [isPlaying, getActiveAudio, progress])
 
   // Dominant color extraction
   useEffect(() => {
@@ -130,7 +189,7 @@ function NowPlaying({ onClose }) {
     }
   }, [currentTrack?.id, currentTrack?.lyrics, currentTrack?.syncedLyrics, currentTrack?.title, currentTrack?.artist])
 
-  // Active lyric index tracking
+  // High-precision active lyric calculation with interval detection
   useEffect(() => {
     if (!lyricsData.isSynced || lyricsData.lines.length === 0) {
       setActiveLyricIndex(-1)
@@ -138,19 +197,34 @@ function NowPlaying({ onClose }) {
     }
 
     const lines = lyricsData.lines
-    const currentTime = progress + 0.15
+    const currentPos = liveTime + syncOffset
 
     let activeIdx = -1
     for (let i = 0; i < lines.length; i++) {
-      if (lines[i].time !== null && lines[i].time <= currentTime) {
+      const line = lines[i]
+      if (line.time !== null && currentPos >= line.time) {
+        if (line.endTime !== null && currentPos >= line.endTime) {
+          continue
+        }
         activeIdx = i
-      } else if (lines[i].time !== null && lines[i].time > currentTime) {
         break
       }
     }
 
+    // Fallback: if in between lines or gap, highlight closest recent line if within 5.5s
+    if (activeIdx === -1) {
+      for (let i = lines.length - 1; i >= 0; i--) {
+        if (lines[i].time !== null && currentPos >= lines[i].time) {
+          if (currentPos - lines[i].time < 5.5) {
+            activeIdx = i
+          }
+          break
+        }
+      }
+    }
+
     setActiveLyricIndex(activeIdx)
-  }, [progress, lyricsData])
+  }, [liveTime, syncOffset, lyricsData])
 
   // Smooth auto-scroll to active lyric
   useEffect(() => {
@@ -185,12 +259,14 @@ function NowPlaying({ onClose }) {
 
   const handleSeek = (time) => {
     seek(time)
+    setLiveTime(time)
   }
 
   const handleLyricTap = (time) => {
     if (time !== null && !isNaN(time)) {
       triggerHaptic(ImpactStyle.Light)
       seek(time)
+      setLiveTime(time)
     }
   }
 
@@ -202,7 +278,7 @@ function NowPlaying({ onClose }) {
     }, 3200)
   }
 
-  const progressPercent = duration > 0 ? (progress / duration) * 100 : 0
+  const progressPercent = duration > 0 ? (liveTime / duration) * 100 : 0
   const hasLyrics = lyricsData.lines.length > 0
 
   return (
@@ -262,29 +338,56 @@ function NowPlaying({ onClose }) {
               className="relative z-10 flex flex-col h-full"
               style={{ paddingTop: 'max(16px, env(safe-area-inset-top, 0px))' }}
             >
-              {/* Header */}
+              {/* Header with Title and Sync Calibrator */}
               <div className="flex items-center justify-between px-6 py-3 flex-shrink-0 border-b border-white/5">
-                <div className="flex items-center gap-3 min-w-0">
+                <div className="flex items-center gap-3 min-w-0 flex-1 mr-3">
                   <img
                     src={getOptimizedImageUrl(currentTrack.coverUrl, 100)}
                     alt=""
-                    className="w-10 h-10 rounded-lg object-cover shadow-md"
+                    className="w-10 h-10 rounded-lg object-cover shadow-md border border-white/10"
                   />
                   <div className="min-w-0">
                     <h3 className="text-sm font-bold text-white truncate">{currentTrack.title}</h3>
                     <p className="text-xs text-white/60 truncate">{currentTrack.artist}</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => {
-                    triggerHaptic(ImpactStyle.Light)
-                    setViewMode('normal')
-                  }}
-                  className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-lg press-scale transition-colors"
-                  title="Close Full Lyrics"
-                >
-                  <IoContractOutline />
-                </button>
+
+                <div className="flex items-center gap-2 flex-shrink-0">
+                  {/* Live Sync Calibrator Tool */}
+                  {lyricsData.isSynced && (
+                    <div className="flex items-center gap-1 bg-white/[0.08] border border-white/10 rounded-full px-2 py-0.5 text-xs">
+                      <span className="text-[9px] font-bold text-white/40 uppercase tracking-wider mr-0.5">SYNC</span>
+                      <button
+                        onClick={() => adjustSyncOffset(-0.2)}
+                        className="w-5 h-5 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white font-bold flex items-center justify-center text-xs press-scale"
+                        title="Lyrics earlier (-0.2s)"
+                      >
+                        -
+                      </button>
+                      <span className={`font-mono text-[10px] font-bold px-1 min-w-[32px] text-center ${syncOffset !== 0 ? 'text-brand-300' : 'text-white/60'}`}>
+                        {syncOffset > 0 ? `+${syncOffset.toFixed(1)}s` : `${syncOffset.toFixed(1)}s`}
+                      </span>
+                      <button
+                        onClick={() => adjustSyncOffset(0.2)}
+                        className="w-5 h-5 rounded-full bg-white/10 hover:bg-white/20 active:bg-white/30 text-white font-bold flex items-center justify-center text-xs press-scale"
+                        title="Lyrics later (+0.2s)"
+                      >
+                        +
+                      </button>
+                    </div>
+                  )}
+
+                  <button
+                    onClick={() => {
+                      triggerHaptic(ImpactStyle.Light)
+                      setViewMode('normal')
+                    }}
+                    className="w-9 h-9 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center text-white text-lg press-scale transition-colors"
+                    title="Close Full Lyrics"
+                  >
+                    <IoContractOutline />
+                  </button>
+                </div>
               </div>
 
               {/* Full Karaoke Lyrics Stream */}
@@ -310,16 +413,18 @@ function NowPlaying({ onClose }) {
                       key={idx}
                       ref={el => (fullLyricLineRefs.current[idx] = el)}
                       onClick={() => handleLyricTap(line.time)}
-                      className={`text-2xl md:text-3xl font-extrabold cursor-pointer transition-all duration-300 leading-relaxed ${
+                      className={`text-2xl md:text-3xl font-extrabold cursor-pointer transition-all duration-200 leading-relaxed ${
                         isActive
-                          ? 'text-white scale-[1.03] origin-left drop-shadow-[0_0_20px_rgba(56,209,176,0.6)] text-brand-300'
+                          ? 'text-white scale-[1.03] origin-left drop-shadow-[0_0_20px_rgba(56,209,176,0.65)] text-brand-300'
                           : isPast
                           ? 'text-white/40 font-medium'
                           : 'text-white/25 hover:text-white/60 font-medium'
                       }`}
                     >
-                      {line.text === '♪' ? (
-                        <span className="inline-block text-xl tracking-widest text-brand-300/60 animate-pulse">♪ ♪ ♪</span>
+                      {line.isInterlude ? (
+                        <span className={`inline-flex items-center gap-1.5 tracking-widest text-xl ${isActive ? 'text-brand-300 animate-pulse' : 'text-white/20'}`}>
+                          <span>•</span><span>•</span><span>•</span>
+                        </span>
                       ) : (
                         line.text
                       )}
@@ -344,7 +449,7 @@ function NowPlaying({ onClose }) {
                     type="range"
                     min="0"
                     max={duration || 0}
-                    value={progress}
+                    value={liveTime}
                     onChange={(e) => handleSeek(Number(e.target.value))}
                     className="w-full h-1 cursor-pointer"
                     style={{
@@ -352,7 +457,7 @@ function NowPlaying({ onClose }) {
                     }}
                   />
                   <div className="flex justify-between mt-1 text-[10px] text-white/50 font-medium">
-                    <span>{formatTime(progress)}</span>
+                    <span>{formatTime(liveTime)}</span>
                     <span>{formatTime(duration)}</span>
                   </div>
                 </div>
@@ -362,8 +467,8 @@ function NowPlaying({ onClose }) {
                     <IoPlaySkipBack />
                   </button>
                   <button
-                    onClick={() => { triggerHaptic(); togglePlay(); }}
-                    className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-black text-xl press-scale shadow-lg shadow-black/50"
+                    onClick={() => { triggerHaptic(ImpactStyle.Medium); togglePlay(); }}
+                    className="w-12 h-12 rounded-full bg-white flex items-center justify-center text-black text-xl press-scale shadow-lg shadow-black/50 hover:scale-105 transition-transform"
                   >
                     {isPlaying ? <IoPause /> : <IoPlay className="ml-0.5" />}
                   </button>
@@ -399,6 +504,7 @@ function NowPlaying({ onClose }) {
                     <div className="text-xs font-semibold text-white/90 truncate">{currentTrack.title}</div>
                   </div>
                   <div className="flex items-center gap-1">
+                    {/* Dedicated Lyrics Karaoke Icon Button (Microphone) */}
                     {hasLyrics && (
                       <button 
                         onClick={() => {
@@ -406,9 +512,9 @@ function NowPlaying({ onClose }) {
                           setViewMode('lyrics')
                         }} 
                         className="w-10 h-10 flex items-center justify-center text-white/70 hover:text-brand-300 text-xl press-scale rounded-full hover:bg-white/10 transition-colors"
-                        title="Open Fullscreen Lyrics"
+                        title="Karaoke Lyrics"
                       >
-                        <IoChatbubbleEllipsesOutline />
+                        <IoMicOutline />
                       </button>
                     )}
                     <button 
@@ -499,7 +605,7 @@ function NowPlaying({ onClose }) {
                       type="range"
                       min="0"
                       max={duration || 0}
-                      value={progress}
+                      value={liveTime}
                       onChange={(e) => handleSeek(Number(e.target.value))}
                       className="w-full h-1.5 rounded-full cursor-pointer"
                       style={{
@@ -508,12 +614,12 @@ function NowPlaying({ onClose }) {
                     />
                   </div>
                   <div className="flex justify-between mt-1">
-                    <span className="text-[11px] font-medium text-white/50">{formatTime(progress)}</span>
+                    <span className="text-[11px] font-medium text-white/50">{formatTime(liveTime)}</span>
                     <span 
                       className="text-[11px] font-medium text-white/50 cursor-pointer hover:text-white transition-colors"
                       onClick={() => setShowRemaining(!showRemaining)}
                     >
-                      {showRemaining && duration > 0 ? `-${formatTime(duration - progress)}` : formatTime(duration)}
+                      {showRemaining && duration > 0 ? `-${formatTime(duration - liveTime)}` : formatTime(duration)}
                     </span>
                   </div>
                 </div>
@@ -582,7 +688,7 @@ function NowPlaying({ onClose }) {
                   <div className="flex-shrink-0 mb-8">
                     <div className="flex items-center justify-between mb-3">
                       <div className="flex items-center gap-2">
-                        <IoMusicalNotesOutline className="text-brand-300" />
+                        <IoMic className="text-brand-300 text-sm" />
                         <h3 className="text-xs font-bold tracking-wider text-brand-300 uppercase">Lyrics</h3>
                       </div>
                       <button
@@ -610,21 +716,22 @@ function NowPlaying({ onClose }) {
                             <p 
                               key={idx}
                               ref={el => (lyricLineRefs.current[idx] = el)}
-                              className={`text-base font-bold transition-all duration-300 leading-snug ${
+                              className={`text-base font-bold transition-all duration-200 leading-snug ${
                                 isCur 
                                   ? 'text-brand-300 scale-[1.02] origin-left' 
                                   : 'text-white/40'
                               }`}
                             >
-                              {line.text === '♪' ? '♪ ♪ ♪' : line.text}
+                              {line.isInterlude ? '•••' : line.text}
                             </p>
                           )
                         })}
                       </div>
 
                       <div className="mt-4 pt-3 border-t border-white/5 flex items-center justify-between">
-                        <span className="text-[10px] font-bold text-brand-300 tracking-widest uppercase">
-                          {lyricsData.isSynced ? 'Synced with playback' : 'Tap for full lyrics'}
+                        <span className="text-[10px] font-bold text-brand-300 tracking-widest uppercase flex items-center gap-1.5">
+                          <IoMic className="text-xs" />
+                          <span>{lyricsData.isSynced ? 'Synced Karaoke' : 'Tap for full lyrics'}</span>
                         </span>
                         <span className="text-xs text-white/40 font-semibold group-hover:text-white">
                           Expand ↗

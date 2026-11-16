@@ -7,8 +7,11 @@ const lyricsMemoryCache = new Map()
 
 /**
  * Parses an LRC or plain text lyrics string into a structured format.
+ * Accurately computes start and end times for each line, handles interludes (empty timestamps),
+ * and filters out metadata tags.
+ * 
  * @param {string} raw - Raw lyrics string (LRC format, <br> separated, or newline separated)
- * @returns {{ lines: Array<{ time: number|null, text: string }>, isSynced: boolean }}
+ * @returns {{ lines: Array<{ time: number|null, endTime: number|null, text: string, isInterlude: boolean }>, isSynced: boolean }}
  */
 export function parseLyrics(raw) {
   if (!raw || typeof raw !== 'string') {
@@ -20,19 +23,23 @@ export function parseLyrics(raw) {
   const rawLines = normalized.split(/\r?\n/)
 
   const timeRegex = /\[(\d{1,2}):(\d{2})(?:\.(\d{1,3}))?\]/g
-  const parsedLines = []
+  const parsedItems = []
   let hasValidTimestamps = false
 
   for (const line of rawLines) {
     const trimmed = line.trim()
     if (!trimmed) continue
 
-    // Extract all timestamps on this line (some LRC lines have multiple: [00:12.00][00:14.00] text)
+    // Ignore metadata tags like [ar:Artist], [ti:Title], [al:Album], [length:...], [by:...]
+    if (/^\[(ar|ti|al|by|offset|length|re|ve):.*\]$/i.test(trimmed)) {
+      continue
+    }
+
     const matches = [...trimmed.matchAll(timeRegex)]
 
     if (matches.length > 0) {
       hasValidTimestamps = true
-      // Extract the lyric text by stripping timestamps
+      // Extract the lyric text by stripping all timestamps
       const text = trimmed.replace(timeRegex, '').trim()
 
       for (const match of matches) {
@@ -42,34 +49,72 @@ export function parseLyrics(raw) {
         const ms = msStr.length === 3 ? parseInt(msStr, 10) / 1000 : parseInt(msStr, 10) / 100
         const timeInSeconds = mins * 60 + secs + ms
 
-        // Filter out LRC header tags like [length: 03:45], [ar: Artist], etc.
-        if (text || trimmed === '') {
-          parsedLines.push({
-            time: Math.round(timeInSeconds * 100) / 100,
-            text: text || '♪'
-          })
-        }
+        parsedItems.push({
+          time: Math.round(timeInSeconds * 100) / 100,
+          text: text,
+          isInterlude: !text
+        })
       }
     } else {
-      // Plain line without timestamp
-      parsedLines.push({
+      parsedItems.push({
         time: null,
-        text: trimmed
+        endTime: null,
+        text: trimmed,
+        isInterlude: false
       })
     }
   }
 
   if (hasValidTimestamps) {
-    // Sort lines by time
-    parsedLines.sort((a, b) => {
+    // Sort lines by timestamp
+    parsedItems.sort((a, b) => {
       if (a.time === null) return 1
       if (b.time === null) return -1
       return a.time - b.time
     })
-    return { lines: parsedLines, isSynced: true }
+
+    // Compute start and end times for each line, and collapse consecutive empty interludes
+    const cleanedLines = []
+    for (let i = 0; i < parsedItems.length; i++) {
+      const item = parsedItems[i]
+      const nextItem = parsedItems[i + 1]
+
+      const startTime = item.time
+      let endTime = nextItem ? nextItem.time : startTime + 6
+
+      // If this is an interlude (empty text timestamp)
+      if (item.isInterlude) {
+        // If there's a next item and the gap is at least 2.5 seconds, display interlude dots '•••'
+        if (nextItem && (nextItem.time - startTime >= 2.5)) {
+          cleanedLines.push({
+            time: startTime,
+            endTime: nextItem.time,
+            text: '•••',
+            isInterlude: true
+          })
+        }
+        continue
+      }
+
+      // If the gap to next line is very long (> 7 seconds), cap the vocal line's endTime
+      // so it doesn't stay highlighted during a long guitar or drum solo
+      const naturalDuration = Math.max(2.5, Math.min(6.5, item.text.length * 0.12 + 1.2))
+      if (nextItem && (nextItem.time - startTime > 7)) {
+        endTime = startTime + naturalDuration
+      }
+
+      cleanedLines.push({
+        time: startTime,
+        endTime: endTime,
+        text: item.text,
+        isInterlude: false
+      })
+    }
+
+    return { lines: cleanedLines, isSynced: true }
   }
 
-  return { lines: parsedLines, isSynced: false }
+  return { lines: parsedItems.filter(p => p.text), isSynced: false }
 }
 
 /**

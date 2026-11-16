@@ -557,8 +557,9 @@ export function PlayerProvider({ children }) {
     currentTrack, isPlaying,
     shuffle, repeat,
     play, togglePlay, next, prev,
-    toggleShuffle, toggleRepeat
-  }), [currentTrack, isPlaying, shuffle, repeat, play, togglePlay, next, prev, toggleShuffle, toggleRepeat])
+    toggleShuffle, toggleRepeat,
+    getActiveAudio
+  }), [currentTrack, isPlaying, shuffle, repeat, play, togglePlay, next, prev, toggleShuffle, toggleRepeat, getActiveAudio])
 
   const progressValue = useMemo(() => ({
     progress, duration, seek
